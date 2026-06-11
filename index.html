@@ -374,7 +374,7 @@
 
         .game-controls {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 12px;
             margin-bottom: 20px;
         }
@@ -399,22 +399,12 @@
             transform: translateY(-3px);
         }
 
-        .btn-pass {
-            background: #f39c12;
-            color: white;
-        }
-
-        .btn-pass:hover:not(:disabled) {
-            background: #e67e22;
-            transform: translateY(-3px);
-        }
-
-        .btn-skip {
+        .btn-tabu {
             background: #e74c3c;
             color: white;
         }
 
-        .btn-skip:hover:not(:disabled) {
+        .btn-tabu:hover:not(:disabled) {
             background: #c0392b;
             transform: translateY(-3px);
         }
@@ -704,6 +694,36 @@
             background: #7f8c8d;
         }
 
+        .tabu-penalty {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #e74c3c;
+            color: white;
+            padding: 30px 50px;
+            border-radius: 15px;
+            font-size: 24px;
+            font-weight: 700;
+            animation: penaltyPop 1s ease-out forwards;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        @keyframes penaltyPop {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 1;
+            }
+            80% {
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 0;
+            }
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 20px;
@@ -824,8 +844,7 @@
 
             <div class="game-controls">
                 <button class="btn-game btn-correct" onclick="markCorrect()">✅ DOĞRU</button>
-                <button class="btn-game btn-pass" id="passBtn" onclick="markPass()">⏭️ PAS</button>
-                <button class="btn-game btn-skip" onclick="markSkip()">⏭️ GEÇŞ</button>
+                <button class="btn-game btn-tabu" onclick="markTabu()">🚫 TABU</button>
             </div>
         </div>
 
@@ -858,8 +877,8 @@
                         <span class="stat-value" id="correctWords">0</span>
                     </div>
                     <div class="stat-row">
-                        <span class="stat-label">Geçilen Kelime:</span>
-                        <span class="stat-value" id="passedWords">0</span>
+                        <span class="stat-label">Tabu Sayısı:</span>
+                        <span class="stat-value" id="tabuCount">0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Başarı Oranı:</span>
@@ -916,313 +935,226 @@
         // ===== KELIME VERİTABANI =====
         const words = {
             kolay: [
-                {word: "KÖPEĞİ", forbidden: ["Hayvan", "Evcil", "Çiftlikte", "Dili", "Arkadaş"]},
-                {word: "KAT", forbidden: ["Bina", "Yüksek", "Seviye", "Üst", "Duvara çarpılan"]},
-                {word: "PİDE", forbidden: ["Türk yemeği", "Ekmek", "Fırın", "Peynir", "Lezzet"]},
-                {word: "TELEFON", forbidden: ["Cep", "Konuşma", "Teknoloji", "Ekran", "Araç"]},
-                {word: "KÜTÜPHANE", forbidden: ["Kitap", "Sessizlik", "Okuma", "Bilgi", "Yer"]},
-                {word: "BALIK", forbidden: ["Deniz", "Hayvan", "Yüzgeç", "Su", "Olta"]},
-                {word: "MASA", forbidden: ["Mobilya", "Oturma", "Ayak", "Yüzey", "Iş"]},
-                {word: "KALECİ", forbidden: ["Futbol", "Koruma", "Kalesi", "Net", "Spor"]},
-                {word: "GÖZLÜK", forbidden: ["Göz", "Mercek", "Yüz", "Çerçeve", "Görme"]},
-                {word: "AYAKKABI", forbidden: ["Ayak", "Giyim", "Ayakkabıcı", "Deri", "Yürüme"]},
-                {word: "SAÇ", forbidden: ["Baş", "Kuaför", "Tıraş", "Sakal", "Saç dökülme"]},
-                {word: "KULAÇ", forbidden: ["Yüzme", "Geniş", "Mesafe", "Ölçü", "Kol"]},
-                {word: "ZİL", forbidden: ["Ses", "Uyarmak", "Kapı", "Ses çıkaran", "Elektrik"]},
-                {word: "PENCERE", forbidden: ["Cam", "Hava", "Dış", "Oda", "Işık"]},
-                {word: "ÇATAL", forbidden: ["Mutfak", "Yemek aracı", "Metal", "Kaşık", "Bıçak"]},
-                {word: "KAN", forbidden: ["Vücut", "Kırmızı", "Kan grubu", "Kan taşı", "Dolaşım"]},
-                {word: "AY", forbidden: ["Gece", "Gezegen", "Yıldız", "Ay taşı", "Işık"]},
-                {word: "ARABA", forbidden: ["Taşıt", "Tekerlek", "Motor", "Direksiyon", "Yol"]},
-                {word: "ÖĞRETMEN", forbidden: ["Öğrenci", "Okul", "Sınıf", "Kütüphaneci", "Eğitim"]},
-                {word: "POLİS", forbidden: ["Suç", "Ceza", "Hukuk", "Bekçi", "Güvenlik"]},
-                {word: "DOKTOR", forbidden: ["Sağlık", "Hasta", "Hastane", "İlaç", "Ameliyat"]},
-                {word: "KAPTAN", forbidden: ["Gemi", "Komutan", "Başkan", "Kaptanlık", "Liman"]},
-                {word: "ASLAN", forbidden: ["Hayvan", "Kedi", "Afrika", "Vahşi", "Saçı"]},
-                {word: "ŞAPKASı", forbidden: ["Başlık", "Kafası", "Giysi", "Kafa kapatan", "Başa giyilen"]},
-                {word: "ÇAKMA", forbidden: ["Alet", "Açmak", "Somun", "Vida", "Düz bıçak"]},
-                {word: "OYUN", forbidden: ["Eğlence", "Kazanma", "Kaybetme", "Kuralı", "Oynamak"]},
-                {word: "BİLGİSAYAR", forbidden: ["Teknoloji", "Ekran", "Fare", "Klavye", "İnternet"]},
-                {word: "FAKSİMİLE", forbidden: ["İletişim", "Belge", "Yazıcı", "Kağıt", "Kopyala"]},
-                {word: "SAAT", forbidden: ["Zaman", "İbre", "Bakır", "Bilezik", "Saatçi"]},
-                {word: "ŞEMSİYE", forbidden: ["Yağmur", "Koruma", "Tutaç", "Kumaş", "Güneş"]},
-                {word: "SİGARA", forbidden: ["Tütün", "İçme", "Zararlı", "Koku", "Sigara paketi"]},
-                {word: "EĞER", forbidden: ["Alet", "Kütük", "Kesme", "Demir", "Şey"]},
-                {word: "VİDA", forbidden: ["Alet", "Metal", "Çevirme", "Vida anahtarı", "Bağlama"]},
-                {word: "HAMAK", forbidden: ["Uyku", "Kumaş", "Ağaç", "Asılı", "Dinlenme"]},
-                {word: "ÇAN", forbidden: ["Ses", "Metal", "Çalmak", "Kilise", "Çıngırak"]},
-                {word: "ÇARK", forbidden: ["Döner", "Tekerlek", "Makine", "Dönme", "Motor"]},
-                {word: "IŞIK", forbidden: ["Aydınlık", "Lamba", "Güneş", "Elektrik", "Parla"]},
-                {word: "VERİMLİ", forbidden: ["Üretim", "Hızlı", "Verim", "Sonuç", "Başarı"]},
-                {word: "AÇIK HAVA", forbidden: ["Dış", "Gök", "Hava", "Rüzgar", "Doğa"]},
-                {word: "GÖKKUŞAĞI", forbidden: ["Renk", "Değişim", "Işık", "Prizma", "Yay"]},
-                {word: "ÇAĞ", forbidden: ["Zaman", "Dönem", "Tarih", "Yıl", "İnsan"]},
-                {word: "ÇALAR SAATİ", forbidden: ["Alet", "Metal", "Ses", "Çıngırak", "Çalmak"]},
-                {word: "KUTU", forbidden: ["Depolama", "Dikdörtgen", "Kapak", "Karton", "Saklama"]},
-                {word: "ÇELİK", forbidden: ["Metal", "Demir", "Güç", "Sertlik", "Bıçak"]},
-                {word: "AYNA", forbidden: ["Yansıma", "Cam", "Görüş", "Yüz", "Temizlik"]},
-                {word: "KASA", forbidden: ["Para", "Güvenlik", "Depo", "Kilit", "Açmak"]},
-                {word: "KARTON", forbidden: ["Kağıt", "Kutu", "Sert", "Malzeme", "Ambalaj"]},
-                {word: "KÖŞE", forbidden: ["Açı", "Eğilme", "Kırma", "Bina", "Kenar"]},
-                {word: "YELKOVAN", forbidden: ["Saat", "Zaman", "Hareket", "İbrit", "Dakika"]},
-                {word: "KOŞU", forbidden: ["Hız", "Hareketi", "Spor", "Bacak", "Yorgun"]},
-                {word: "TOKATLAMA", forbidden: ["Çok", "Sert", "Darbe", "Vurma", "Acı"]},
-                {word: "SAHA", forbidden: ["Yer", "Boş", "Geniş", "Açık", "Tarla"]},
-                {word: "KUYRUK", forbidden: ["Hayvan", "Son", "Özür", "Birleşme", "Arkası"]},
-                {word: "KİTAP", forbidden: ["Okuma", "Sayfa", "Yazar", "Yazı", "Bilgi"]},
-                {word: "BAŞKAN", forbidden: ["Lider", "Yönetim", "Seçim", "Güç", "Başkanlık"]},
-                {word: "YATAK", forbidden: ["Uyku", "Misafirlik", "Mobilya", "Çarşaf", "Yatış"]},
-                {word: "KAPI", forbidden: ["Giriş", "Çıkış", "Anahtar", "Kilit", "Açma"]},
-                {word: "KÖPRİ", forbidden: ["Geçiş", "Su", "Köprülemek", "İnşaat", "Yol"]},
-                {word: "OYUNCU", forbidden: ["Rol", "Sahne", "Tiyatro", "Film", "Oyunculuk"]},
-                {word: "FUTBOLCU", forbidden: ["Top", "Spor", "Saha", "Oyun", "Takım"]},
-                {word: "BALIKÇI", forbidden: ["Balık", "Su", "Ağ", "Teknesi", "Olta"]},
-                {word: "KAMERAMAN", forbidden: ["Kamera", "Film", "Sahnesi", "Çekim", "Tiyatro"]},
-                {word: "MÜZİSYEN", forbidden: ["Müzik", "Enstrüman", "Ses", "Nota", "Gitar"]},
-                {word: "DOKTOR", forbidden: ["Hastane", "İlaç", "Ameliyat", "Tanı", "Enjeksiyon"]},
-                {word: "MÜHENDIS", forbidden: ["Bina", "Makine", "Tasarım", "Proje", "İnşaat"]},
-                {word: "AVUKAT", forbidden: ["Dava", "Mahkeme", "Kanun", "Ceza", "Hukuk"]},
-                {word: "DAMAT", forbidden: ["Evlilik", "Gelin", "Nikah", "Düğün", "Gerdek"]},
-                {word: "GELIN", forbidden: ["Evlilik", "Damat", "Nikah", "Düğün", "Beyaz"]},
-                {word: "DANSÇI", forbidden: ["Dans", "Müzik", "Ritim", "Hareket", "Sahne"]},
-                {word: "AŞÇI", forbidden: ["Yemek", "Mutfak", "Pişirme", "Sos", "Restoran"]},
-                {word: "BARMENYardımcı", forbidden: ["Bar", "İçki", "Cam", "Servis", "Meşrubat"]},
-                {word: "TARIH", forbidden: ["Zaman", "Eski", "Yazı", "Belgeler", "Olaylar"]},
-                {word: "COĞRAFYA", forbidden: ["Harita", "Yer", "Ülke", "Bölge", "Dış"]},
-                {word: "BIYOLOJI", forbidden: ["Canlı", "Hücre", "Genetik", "Evrim", "Organizmalar"]},
-                {word: "KİMYA", forbidden: ["Atom", "Element", "Reaksiyon", "Madde", "Laboruvar"]},
-                {word: "FİZİK", forbidden: ["Hareket", "Enerji", "Kuvvet", "Işık", "Atom"]},
-                {word: "MATEMATİK", forbidden: ["Rakam", "Formül", "Sayı", "Denklem", "Hesap"]},
-                {word: "SANAT", forbidden: ["Ressam", "Resim", "Heykel", "Müze", "Güzellik"]},
-                {word: "ŞİİR", forbidden: ["Şair", "Yazı", "Kafiye", "Duygu", "Edebiyat"]},
-                {word: "ROMAN", forbidden: ["Yazar", "Hikaye", "Karakterler", "Olay", "Kitap"]},
-                {word: "TİYATRO", forbidden: ["Oyuncu", "Sahne", "Oyun", "Perdesi", "Seyirciler"]},
-                {word: "MÜZİK", forbidden: ["Not", "Şarkı", "Enstrüman", "Melodi", "Ritim"]},
-                {word: "FUTBOL", forbidden: ["Top", "Saha", "Kaleci", "Gol", "Oyuncu"]},
-                {word: "VOLEYBOL", forbidden: ["Top", "Ağ", "Saha", "Takım", "Oyun"]},
-                {word: "BASKETBOLTopu", forbidden: ["Top", "Sepet", "Saha", "Oyuncu", "Şut"]},
-                {word: "TENIS", forbidden: ["Top", "Raket", "Saha", "Ağ", "Oyuncu"]},
-                {word: "ŞAH", forbidden: ["Satranç", "Taş", "Saltanat", "Kral", "Kraliçe"]},
-                {word: "KANAL", forbidden: ["Su", "Yayın", "Televizyon", "Geçiş", "Bulaşık"]},
-                {word: "KÜLTÜR", forbidden: ["Sanat", "Âdet", "Gelenek", "Medeniyyet", "Karakter"]},
-                {word: "SOSYAL", forbidden: ["İnsan", "Toplum", "İlişki", "Bağlantı", "Ağ"]},
-                {word: "TEKNOLOJİ", forbidden: ["Bilgisayar", "İnvansyon", "Ileri", "Teknisi", "Makineler"]},
-                {word: "İNTERNET", forbidden: ["Web", "Bilgisayar", "Bağlantı", "Data", "Siber"]},
-                {word: "ELEKTRİSİTE", forbidden: ["Güç", "Akım", "Enerji", "Ampul", "Voltaj"]},
-                {word: "GAS", forbidden: ["Hava", "Yakıt", "Buhar", "Madde", "Belediye"]},
-                {word: "SUYUN", forbidden: ["Sıvı", "Deniz", "Nehir", "H2O", "Tatlı"]},
-                {word: "KAYNAĞININ", forbidden: ["Başlangıç", "Kökenin", "Menba", "Ufuk", "Atma"]},
-                {word: "Büyükelçi", forbidden: ["Diplomat", "Devlet", "Temsilci", "Elçilerin", "Sözleşme"]},
-                {word: "MERHAMET", forbidden: ["Şefkat", "Affetme", "Acı", "Duygusu", "Hissiyat"]},
-                {word: "CESARET", forbidden: ["Öğütlenme", "Yürek", "Korkusuzluk", "Güçlü", "Korku"]},
-                {word: "ERDEM", forbidden: ["İyilik", "Nitelik", "Güzellik", "Fazilet", "Ahlak"]},
-                {word: "HAIN", forbidden: ["İhanetçi", "Dışarı Satan", "Düşman", "Çift Yüzlü", "Sadakatsiz"]},
-                {word: "HEKIM", forbidden: ["Doktor", "Tıp", "Sağlık", "Hastalar", "Tedavi"]},
-                {word: "KAYNAKLAR", forbidden: ["Menba", "Atış", "Bilgi", "Kaynak", "Referans"]},
-                {word: "TOPOGRAPHY", forbidden: ["Harita", "Yer", "Şekil", "Coğrafya", "Yerleşim"]},
-                {word: "SEMBOL", forbidden: ["İşaret", "Anlam", "Temsilci", "Simge", "Yazı"]},
-                {word: "TÜLÜCEMONEİ", forbidden: ["Üzüm", "Meyve", "Bahçe", "Ağaç", "Tatlı"]},
-                {word: "VİRÜS", forbidden: ["Hastalık", "Enfeksiyon", "Salgın", "Mikro", "Parçacık"]},
-                {word: "ALOPECIA", forbidden: ["Saç", "Kaybı", "Kalvitilk", "Deri", "Hastalık"]},
-                {word: "GLANDULA", forbidden: ["Organ", "Bezle", "Salgısı", "Vücudunda", "Kimya"]},
-                {word: "CİDDİ", forbidden: ["Ağır", "Önemli", "Sorun", "Tehlikeli", "Tehlike"]},
-                {word: "AÇIKÇA", forbidden: ["Belirgin", "Sabit", "Klâr", "Seçilmiş", "Anlaşılması"]},
-                {word: "ART", forbidden: ["Sanat", "Teknik", "Yaratı", "Beceri", "Keşif"]},
-                {word: "BEYAZSAVHİ", forbidden: ["Kâğıt", "Boşluk", "Temiz", "Blok", "Sayfaları"]},
-                {word: "CENAZE", forbidden: ["Ölü", "Defin", "Ağlamak", "Tören", "Mezar"]},
-                {word: "DOLAYLIZAMANSAL", forbidden: ["Zaman", "Saat", "Dönem", "Aralık", "Geçici"]},
-                {word: "EVİN", forbidden: ["Yaşanacak", "Yer", "Aile", "Çatı", "Duvarlar"]},
-                {word: "GÜZEL", forbidden: ["Hoş", "Estetik", "Cazibeysi", "Güz", "Çekici"]},
-                {word: "HOP", forbidden: ["Sekme", "Atlama", "Zıplama", "Hareket", "Parçalanma"]},
-                {word: "İŞLEY", forbidden: ["Işletilir", "Çalışır", "Başlattığından", "Başlangıç", "Denetim"]},
-                {word: "JİM", forbidden: ["Spor", "Antrenman", "Dumbbell", "Egzersiz", "Vücut"]},
-                {word: "KALESi", forbidden: ["Futbol", "Bekçiler", "İçinde", "Koruma", "Kapısı"]},
-                {word: "LAPİS", forbidden: ["Taş", "Mavi", "Mineral", "Değerli", "Cevher"]},
-                {word: "MALZAMESİ", forbidden: ["İhtiyaç", "Parçaları", "Maddeler", "Aksesuarı", "Alet"]},
-                {word: "NATÜR", forbidden: ["Doğa", "Canlı", "Tabii", "Vahşi", "Ortam"]},
-                {word: "OKOŞİSTEM", forbidden: ["Doğa", "Canlılar", "Çevre", "Yaşam", "Biyoloji"]},
-                {word: "PARİS", forbidden: ["Şehir", "Fransa", "Başkent", "Seine", "Eiffel"]},
-                {word: "QUOTEBİLGİ", forbidden: ["Söz", "Yazı", "Alıntı", "Yazar", "Cümle"]},
-                {word: "RAKIN", forbidden: ["İçki", "Türk", "Anason", "Rakı", "Meşrubat"]},
-                {word: "SAMURAIMI", forbidden: ["Savaşçı", "Japon", "Samuray", "Kılıç", "Asker"]},
-                {word: "TABUMİSMAR", forbidden: ["Yasak", "Oyun", "Söylemek", "Gizli", "Konuşma"]},
-                {word: "TALÜSE", forbidden: ["Boy", "Uzunluk", "Yükseklik", "Cücelik", "Ölçü"]},
-                {word: "UMMAN", forbidden: ["Deniz", "Geniş", "Akım", "Dalga", "Sıvı"]},
-                {word: "VANSURÜ", forbidden: ["Batı", "Harita", "Açıkça", "Coğrafya", "Yer"]},
-                {word: "WATTMETRE", forbidden: ["Güç", "Elektrik", "Ölçü", "Alet", "Voltaj"]},
-                {word: "XIFITLER", forbidden: ["Konuşma", "Söz", "Dil", "Anlamı", "İletişim"]},
-                {word: "YENİDÜNYA", forbidden: ["Amerika", "Coğrafya", "Keşif", "Kita", "Ülke"]},
-                {word: "ZIRVE", forbidden: ["Tepe", "Doruk", "En üst", "Yükseklik", "Dağ"]}
+                {word: "Tatil", forbidden: ["dinlenme", "gezi", "seyahat", "yaz", "eğlence"]},
+                {word: "Otel", forbidden: ["konaklama", "oda", "resepsiyon", "müşteri", "yatak"]},
+                {word: "Restoran", forbidden: ["yemek", "garson", "menü", "masa", "sipariş"]},
+                {word: "Garson", forbidden: ["servis", "sipariş", "restoran", "masa", "müşteri"]},
+                {word: "Menü", forbidden: ["yemek", "liste", "sipariş", "restoran", "seçenek"]},
+                {word: "Rezervasyon", forbidden: ["ayırtma", "otel", "masa", "önceden", "kayıt"]},
+                {word: "Havaalanı", forbidden: ["uçak", "terminal", "pasaport", "bavul", "pilot"]},
+                {word: "Bavul", forbidden: ["valiz", "seyahat", "eşya", "taşıma", "tatil"]},
+                {word: "Pasaport", forbidden: ["kimlik", "yurtdışı", "seyahat", "vize", "kontrol"]},
+                {word: "Bilet", forbidden: ["giriş", "yolculuk", "koltuk", "ücret", "etkinlik"]},
+                {word: "Yolculuk", forbidden: ["seyahat", "araç", "rota", "tatil", "gezi"]},
+                {word: "Harita", forbidden: ["yön", "adres", "rota", "navigasyon", "konum"]},
+                {word: "Kamp", forbidden: ["çadır", "doğa", "ateş", "gece", "macera"]},
+                {word: "Çadır", forbidden: ["kamp", "doğa", "konaklama", "bez", "direk"]},
+                {word: "Fener", forbidden: ["ışık", "kamp", "pil", "gece", "aydınlatma"]},
+                {word: "Piknik", forbidden: ["park", "aile", "yemek", "doğa", "sepet"]},
+                {word: "Mangal", forbidden: ["et", "kömür", "piknik", "ateş", "ızgara"]},
+                {word: "Sahil", forbidden: ["deniz", "kum", "plaj", "kıyı", "güneş"]},
+                {word: "Plaj", forbidden: ["kum", "deniz", "şezlong", "yaz", "yüzme"]},
+                {word: "Dalgıç", forbidden: ["deniz", "tüp", "sualtı", "yüzmek", "keşif"]},
+                {word: "Yüzme", forbidden: ["havuz", "deniz", "kulaç", "spor", "su"]},
+                {word: "Kayak", forbidden: ["kar", "dağ", "kış", "spor", "pist"]},
+                {word: "Sporcu", forbidden: ["antrenman", "yarış", "kondisyon", "takım", "başarı"]},
+                {word: "Hakem", forbidden: ["maç", "düdük", "karar", "kural", "spor"]},
+                {word: "Turnuva", forbidden: ["yarışma", "kupa", "takım", "eleme", "şampiyon"]},
+                {word: "Madalya", forbidden: ["ödül", "altın", "başarı", "spor", "yarış"]},
+                {word: "Antrenör", forbidden: ["takım", "sporcu", "çalışma", "taktik", "eğitim"]},
+                {word: "Taraftar", forbidden: ["takım", "maç", "tribün", "tezahürat", "destek"]},
+                {word: "Takım", forbidden: ["oyuncu", "birlik", "spor", "grup", "maç"]},
+                {word: "Kaptan", forbidden: ["lider", "takım", "yönetmek", "gemi", "sorumlu"]},
+                {word: "Şampiyon", forbidden: ["birinci", "kupa", "başarı", "kazanan", "yarış"]},
+                {word: "Kütüphane", forbidden: ["kitap", "sessiz", "raf", "öğrenci", "okuma"]},
+                {word: "Roman", forbidden: ["kitap", "yazar", "hikâye", "kurgu", "karakter"]},
+                {word: "Hikâye", forbidden: ["olay", "anlatım", "kahraman", "kitap", "masal"]},
+                {word: "Şair", forbidden: ["şiir", "edebiyat", "mısra", "sanat", "yazar"]},
+                {word: "Gazete", forbidden: ["haber", "manşet", "basın", "günlük", "köşe"]},
+                {word: "Dergi", forbidden: ["yayın", "aylık", "makale", "kapak", "okuma"]},
+                {word: "Haber", forbidden: ["olay", "medya", "televizyon", "gazete", "bilgi"]},
+                {word: "Röportaj", forbidden: ["soru", "cevap", "gazeteci", "konuşma", "yayın"]},
+                {word: "Makale", forbidden: ["yazı", "konu", "bilgi", "dergi", "araştırma"]},
+                {word: "Başlık", forbidden: ["isim", "yazı", "manşet", "konu", "metin"]},
+                {word: "İmza", forbidden: ["belge", "isim", "kalem", "onay", "resmi"]},
+                {word: "Sergi", forbidden: ["sanat", "galeri", "eser", "ziyaret", "gösterim"]},
+                {word: "Ressam", forbidden: ["tablo", "boya", "sanat", "fırça", "çizim"]},
+                {word: "Heykel", forbidden: ["taş", "sanat", "yontu", "müze", "eser"]},
+                {word: "Tiyatro", forbidden: ["sahne", "oyuncu", "perde", "oyun", "seyirci"]},
+                {word: "Sahne", forbidden: ["tiyatro", "ışık", "gösteri", "oyuncu", "perde"]},
+                {word: "Oyuncu", forbidden: ["film", "rol", "sahne", "karakter", "sanatçı"]},
+                {word: "Yönetmen", forbidden: ["film", "çekim", "sahne", "sinema", "senaryo"]},
+                {word: "Senaryo", forbidden: ["film", "hikâye", "karakter", "sahne", "yazı"]},
+                {word: "Mikrofon", forbidden: ["ses", "konuşma", "sahne", "kayıt", "yayın"]},
+                {word: "Konser", forbidden: ["müzik", "sahne", "sanatçı", "seyirci", "etkinlik"]},
+                {word: "Albüm", forbidden: ["şarkı", "müzik", "kayıt", "sanatçı", "liste"]},
+                {word: "Melodi", forbidden: ["müzik", "nota", "ritim", "şarkı", "ses"]},
+                {word: "Ritim", forbidden: ["tempo", "müzik", "davul", "uyum", "melodi"]},
+                {word: "Orkestra", forbidden: ["müzik", "şef", "enstrüman", "topluluk", "konser"]},
+                {word: "Şef", forbidden: ["orkestra", "yönetmek", "müzik", "lider", "baton"]},
+                {word: "Nota", forbidden: ["müzik", "ses", "kağıt", "melodi", "enstrüman"]},
+                {word: "Enstrüman", forbidden: ["müzik", "çalgı", "ses", "nota", "sanat"]},
+                {word: "Gitar", forbidden: ["tel", "müzik", "akor", "çalgı", "sahne"]}
             ],
             orta: [
-                {word: "DEMOKRASİ", forbidden: ["Oy", "Seçim", "Hükümet", "Yönetim", "Özgürlük"]},
-                {word: "CÜCELİK", forbidden: ["Hastalık", "Boy", "Kısa", "Cüce", "Fizik"]},
-                {word: "İRONİ", forbidden: ["Zıtlık", "Söz", "Alaycı", "Anlam", "Gülünç"]},
-                {word: "METAFOR", forbidden: ["Sözcük", "Benzetme", "Yazın", "Anlam", "Şiir"]},
-                {word: "NOSTALJİ", forbidden: ["Özlem", "Geçmiş", "Hissiyat", "Hüzün", "Anı"]},
-                {word: "SATİRİK", forbidden: ["Komik", "Mizah", "Alaycı", "Ağır", "Söz"]},
-                {word: "MOTİF", forbidden: ["Tema", "Desen", "Sanat", "Figür", "Müzik"]},
-                {word: "SİNEMA", forbidden: ["Film", "Sanat", "Sahne", "Müzik", "Ses"]},
-                {word: "ORMAN", forbidden: ["Ağaç", "Doğa", "Yeşil", "Oksijen", "Hayvan"]},
-                {word: "SERAMİK", forbidden: ["Porselen", "Seramik", "Çanak", "Tabak", "Çatı"]},
-                {word: "REALİZM", forbidden: ["Gerçek", "Sanat", "Resim", "Felsefe", "Davranış"]},
-                {word: "KAFTAN", forbidden: ["Giysi", "Elbise", "Çarşaf", "Kılık", "Uzun kıyafet"]},
-                {word: "SAKSOFONİ", forbidden: ["Müzik", "Enstrüman", "Ses", "Cazz", "Bakır"]},
-                {word: "UYUM", forbidden: ["Birlik", "Barış", "Mutluluk", "Takım", "Anlayış"]},
-                {word: "PEDALİ", forbidden: ["Bisiklet", "Ayak", "Makine", "Hızlandırma", "Hareket"]},
-                {word: "ORIJIN", forbidden: ["Kaynak", "Başlangıç", "Kökeni", "İlk", "Neresi"]},
-                {word: "MOD", forbidden: ["Moda", "Stil", "Trend", "Kültür", "Şekli"]},
-                {word: "PALİMPSEST", forbidden: ["Yazı", "Eski", "Silinmiş", "Parşömen", "Dönem"]},
-                {word: "HEDONİZM", forbidden: ["Zevk", "Felsefe", "Yaşam", "Tatmin", "Haz"]},
-                {word: "ENTROPİ", forbidden: ["Fizik", "Kaos", "Düzen", "Termodinamik", "Bozulma"]},
-                {word: "PSİKİYATRİ", forbidden: ["Mental", "Doktor", "Ruh", "Hastalık", "Tedavi"]},
-                {word: "KOSMOPOLİT", forbidden: ["Dünya", "Uluslararası", "İnsan", "Sınırsız", "Kültür"]},
-                {word: "FONEMİK", forbidden: ["Ses", "Dil", "Kelime", "Harf", "Anlam"]},
-                {word: "ANTROPOMORFIZM", forbidden: ["İnsan", "Özellik", "Hayvan", "Benzetme", "Ruh"]},
-                {word: "KOD", forbidden: ["İnsan", "Beden", "Yaşam", "Fizyoloji", "Biyoloji"]},
-                {word: "ONTOLOJİ", forbidden: ["Varlık", "Felsefe", "Teori", "İnsan", "Bilim"]},
-                {word: "MAKABİ", forbidden: ["Ölüm", "Sinister", "Dehşet", "Korkunç", "Estetik"]},
-                {word: "ABSTRAKT SANAT", forbidden: ["Resim", "Sanat", "Şekil", "Gerçeklik", "Modern"]},
-                {word: "PARABİOLOJİ", forbidden: ["Paranormal", "Ruh", "Bilim", "Gizemli", "Dış"]},
-                {word: "BARİYER", forbidden: ["Engel", "Duvar", "Ayrım", "Sınır", "Kimyasal"]},
-                {word: "ENKLİTİK", forbidden: ["Dilbilgisi", "Sözcük", "Ses", "Morfema", "Bağlama"]},
-                {word: "EPİSENTR", forbidden: ["Deprem", "Merkez", "Sarsıntı", "Yer", "Hasar"]},
-                {word: "FENOMENOLOJİ", forbidden: ["Felsefe", "İnsan", "İdrake", "Deneyim", "Bilim"]},
-                {word: "KATEGORİ", forbidden: ["Sınıf", "Grup", "Bölüm", "Tür", "Ayrım"]},
-                {word: "ÇERÇEVELEME", forbidden: ["Sınır", "Sanat", "Resim", "Görüş", "Alan"]},
-                {word: "FONETIK", forbidden: ["Ses", "Dil", "Telaffuz", "Harf", "Konuşma"]},
-                {word: "GENETİK", forbidden: ["Kalıtım", "DNA", "Gen", "Hastalık", "Biyoloji"]},
-                {word: "HOMOGRAF", forbidden: ["Yazı", "İkiz kelime", "Telaffuz", "Anlamı", "Dil"]},
-                {word: "KİNETİK", forbidden: ["Hareket", "Enerji", "Fizik", "Dinamik", "Hız"]},
-                {word: "LEKSİKON", forbidden: ["Sözlük", "Kelimeler", "Dil", "Anlam", "Sözcük"]},
-                {word: "MÜZİK TEORİSİ", forbidden: ["Melodi", "Armoni", "Ritim", "Not", "Ses"]},
-                {word: "NEOKLASİK", forbidden: ["Sanat", "Stil", "Klasik", "Modern", "İnsan"]},
-                {word: "ONTOLOJİST", forbidden: ["Varlık", "Felsefeci", "Teori", "İnsan", "Bilim"]},
-                {word: "FARMAKOLOJI", forbidden: ["İlaç", "Eczane", "Doktor", "Kimya", "Tedavi"]},
-                {word: "AROMATERAPİ", forbidden: ["Tedavi", "Koku", "Bitki", "Yaşam", "Sağlık"]},
-                {word: "APOMİKSİS", forbidden: ["Üretim", "Seks", "Çoğalma", "Biyoloji", "Hücre"]},
-                {word: "KUADRUPEDİ", forbidden: ["Dört", "Ayak", "Hayvan", "Hareket", "Bacak"]},
-                {word: "MAKROSKOPİK", forbidden: ["Büyük", "Görülür", "Göz", "Mikroskop", "Boyut"]},
-                {word: "POLİKROMİ", forbidden: ["Renkli", "Sanat", "Resim", "Renk", "Teknik"]},
-                {word: "KIRIŞ", forbidden: ["Işık", "Kırılma", "Cam", "Lens", "Fizik"]},
-                {word: "AUTONOMI", forbidden: ["Bağımsızlık", "Özerklik", "Kendi", "Yönetim", "Gücü"]},
-                {word: "BULIMIA", forbidden: ["Hastalık", "Yemek", "Kusmak", "Gıda", "Anoreksiya"]},
-                {word: "CINEMATİCA", forbidden: ["Hareket", "Film", "Sanat", "Görüntü", "Sinematoloji"]},
-                {word: "DIALEKTIK", forbidden: ["Mantık", "Çelişki", "Felsefe", "Tez", "Sintez"]},
-                {word: "ERGONOMI", forbidden: ["Tasarım", "Rahatlık", "İş", "Uygunluk", "Çalışma"]},
-                {word: "FIZYOLOJI", forbidden: ["Beden", "Organ", "Fonksiyon", "Beyin", "Vücut"]},
-                {word: "GASTRONOMİ", forbidden: ["Yemek", "Pişirme", "Aşçılık", "Mutfak", "Lezzet"]},
-                {word: "HEDONIST", forbidden: ["Zevk", "İstekli", "Yaşam", "Felsefe", "Hazlı"]},
-                {word: "İZOLASYON", forbidden: ["Ayırma", "Karantina", "Tecrit", "Uzaklaştırma", "Ayrı"]},
-                {word: "JALUZİ", forbidden: ["Pencere", "Perde", "Kumaş", "Işık", "Kapalı"]},
-                {word: "KATASTAL", forbidden: ["Harita", "Arsa", "Tapu", "Resmî", "Kayıt"]},
-                {word: "LITOTOMI", forbidden: ["Cerrahi", "Ağır", "Taş", "Operasyon", "Kesme"]},
-                {word: "MOTİVASYON", forbidden: ["Istek", "Çalışma", "Neden", "İtiş", "Dürtü"]},
-                {word: "NEFROLOJI", forbidden: ["Böbrek", "Doktor", "Tıp", "Hastalık", "Organ"]},
-                {word: "OBSTETRİK", forbidden: ["Doğum", "Hamile", "Tıp", "Doktor", "Çocuk"]},
-                {word: "PARANTEZ", forbidden: ["Yazı", "Sembol", "Açılı", "Kapalı", "Metin"]},
-                {word: "QUARANTINE", forbidden: ["Ayırma", "Karantina", "Hastalık", "İzolasyon", "Tecrit"]},
-                {word: "RETORİK", forbidden: ["Söz", "Hitabet", "Konuşma", "Sanat", "İkna"]},
-                {word: "SADİZM", forbidden: ["Acı", "Zulüm", "Eğlenme", "İşkence", "Eğlence"]},
-                {word: "TAKSIDERMI", forbidden: ["Hayvan", "Doldurma", "Koruma", "Sanat", "Müze"]},
-                {word: "URETLOJI", forbidden: ["Tıp", "Mesane", "Doktor", "Organ", "Hastalık"]},
-                {word: "VASKÜLİT", forbidden: ["Enflamasyon", "Damar", "Hastalık", "Tıp", "İltihap"]},
-                {word: "WATUSI", forbidden: ["Dans", "Ritim", "Müzik", "Hareketi", "Africano"]},
-                {word: "XANADU", forbidden: ["Cenneti", "Yüksek", "Hayal", "Saray", "İstinye"]},
-                {word: "YARGI", forbidden: ["Mahkeme", "Hukuk", "Karar", "Yargıç", "Adalet"]},
-                {word: "ZOONOZ", forbidden: ["Hastalık", "Hayvan", "Bulaş", "İnsan", "Enfeksiyon"]},
-                {word: "AVERŞİON", forbidden: ["Nefret", "Tiksinme", "Çekinme", "Hoşlanmama", "Tepki"]},
-                {word: "BİSEKSÜEL", forbidden: ["Cinsellik", "Çifte", "Aşk", "İlişki", "Tercihi"]},
-                {word: "CENTRİFUJ", forbidden: ["Makine", "Dönme", "Kuvvet", "Ayrıştırma", "Fizik"]},
-                {word: "DEFLORALİZE", forbidden: ["Bitkiler", "Çiçekler", "Yok", "Doğa", "Envai"]},
-                {word: "EKOMETRİ", forbidden: ["Ölçüm", "Doğa", "Çevre", "Bilim", "Sayım"]},
-                {word: "FETİŞ", forbidden: ["Obje", "Aşk", "İlişki", "Fizyoloji", "Psikiyatri"]},
-                {word: "GEOMETRİ", forbidden: ["Matematik", "Şekil", "Ölçüm", "Açı", "Alan"]},
-                {word: "HEMORAJI", forbidden: ["Kan", "Akış", "Hastalık", "Kaybı", "Doktor"]},
-                {word: "İNCİZYON", forbidden: ["Kesme", "Cerrahi", "Operasyon", "Bıçak", "Yara"]},
-                {word: "JAKOBİYEN", forbidden: ["Matematik", "Matris", "Determinant", "Fonksiyon", "Türev"]},
-                {word: "KATASTROF", forbidden: ["Felaket", "Hâdi", "Korkunç", "Dağılma", "Çöküş"]},
-                {word: "LAKTOJENİK", forbidden: ["Süt", "Sütle", "Hormonal", "Üretim", "Emzirme"]},
-                {word: "MEDULLER", forbidden: ["Beyin", "Organ", "Sinir", "Merkezî", "Kök"]},
-                {word: "NEOLOJI", forbidden: ["Yeni", "Kelime", "Dil", "Sözcük", "Ilaç"]},
-                {word: "OPALESCSE", forbidden: ["Parıltı", "Işık", "Renkler", "Cam", "Görünüş"]},
-                {word: "PALİNDROM", forbidden: ["Kelime", "Tersine", "Yazı", "Tersi", "Simetri"]},
-                {word: "QUADRICEPS", forbidden: ["Kas", "Bacak", "Anatomi", "Vücut", "Organ"]},
-                {word: "REFRAKCYON", forbidden: ["Işık", "Cam", "Kırılma", "Fizik", "Göz"]},
-                {word: "SAKROMENTİZM", forbidden: ["Din", "Kutsal", "Ritüel", "Dini", "İbadet"]},
-                {word: "TAVTOLOJİ", forbidden: ["Tekrar", "Söz", "Mantık", "Boş", "Anlamsız"]},
-                {word: "ULTRASONİK", forbidden: ["Ses", "Yüksek", "Frekans", "Tıp", "Fizik"]},
-                {word: "VİRTÜÖZ", forbidden: ["Yetenekli", "Sanat", "Doktor", "Ressam", "Müzisyen"]},
-                {word: "WUNDERKINsüre", forbidden: ["Çocuk", "Yetenekli", "Dâhia", "Mucize", "Budala"]},
-                {word: "XANTIK", forbidden: ["Sarı", "Renk", "Kimya", "Bitkiler", "Pigment"]},
-                {word: "YORKSHIRE", forbidden: ["Bölge", "İngiltere", "Ülke", "Coğrafya", "Mekan"]},
-                {word: "ZOOPHILIA", forbidden: ["Hayvan", "Aşk", "Cinsellik", "Sapkın", "Çekinme"]}
+                {word: "Takvim", forbidden: ["tarih", "gün", "ay", "yıl", "plan"]},
+                {word: "Randevu", forbidden: ["saat", "görüşme", "buluşma", "tarih", "plan"]},
+                {word: "Pusula", forbidden: ["yön", "kuzey", "harita", "keşif", "rota"]},
+                {word: "Navigasyon", forbidden: ["yol", "harita", "konum", "yön", "araç"]},
+                {word: "İstasyon", forbidden: ["tren", "durak", "yolcu", "ray", "ulaşım"]},
+                {word: "Metro", forbidden: ["yeraltı", "ulaşım", "durak", "ray", "yolcu"]},
+                {word: "Vapur", forbidden: ["deniz", "yolcu", "iskele", "ulaşım", "gemi"]},
+                {word: "İskele", forbidden: ["deniz", "vapur", "kıyı", "yolcu", "liman"]},
+                {word: "Limuzin", forbidden: ["araba", "lüks", "şoför", "uzun", "araç"]},
+                {word: "Karavan", forbidden: ["kamp", "araç", "seyahat", "tatil", "konaklama"]},
+                {word: "Merdiven", forbidden: ["basamak", "çıkmak", "inmek", "kat", "bina"]},
+                {word: "Koridor", forbidden: ["geçit", "okul", "bina", "uzun", "yol"]},
+                {word: "Deprem", forbidden: ["sarsıntı", "fay", "yer", "afet", "bina"]},
+                {word: "Sel", forbidden: ["su", "taşkın", "yağmur", "afet", "nehir"]},
+                {word: "Kasırga", forbidden: ["rüzgar", "fırtına", "afet", "hava", "yıkım"]},
+                {word: "Volkan", forbidden: ["lav", "dağ", "patlama", "magma", "ateş"]},
+                {word: "Çöl", forbidden: ["kum", "sıcak", "kaktüs", "kurak", "deve"]},
+                {word: "Vaha", forbidden: ["çöl", "su", "yeşillik", "serin", "yaşam"]},
+                {word: "Mağara", forbidden: ["kaya", "karanlık", "yeraltı", "keşif", "tarih"]},
+                {word: "Şelale", forbidden: ["su", "yükseklik", "doğa", "akıntı", "manzara"]},
+                {word: "Rehber", forbidden: ["turist", "bilgi", "gezi", "yol", "anlatım"]},
+                {word: "Turist", forbidden: ["gezi", "tatil", "yabancı", "fotoğraf", "seyahat"]},
+                {word: "Hatıra", forbidden: ["anı", "geçmiş", "fotoğraf", "hediye", "anmak"]},
+                {word: "Koleksiyon", forbidden: ["biriktirmek", "seri", "hobi", "parça", "albüm"]},
+                {word: "Pul", forbidden: ["posta", "koleksiyon", "zarf", "mektup", "hobi"]},
+                {word: "Madeni Para", forbidden: ["bozukluk", "para", "metal", "koleksiyon", "tarih"]},
+                {word: "Antika", forbidden: ["eski", "değerli", "eşya", "tarih", "koleksiyon"]},
+                {word: "Müzayede", forbidden: ["açık artırma", "satış", "teklif", "koleksiyon", "eser"]},
+                {word: "Hazine", forbidden: ["altın", "değerli", "gizli", "sandık", "define"]},
+                {word: "Define", forbidden: ["hazine", "kazı", "harita", "altın", "gizli"]},
+                {word: "Dedektif", forbidden: ["araştırma", "ipucu", "suç", "polis", "gizem"]},
+                {word: "Tanık", forbidden: ["olay", "mahkeme", "görmek", "ifade", "kişi"]},
+                {word: "Delil", forbidden: ["kanıt", "suç", "mahkeme", "araştırma", "polis"]},
+                {word: "Sorgu", forbidden: ["soru", "polis", "ifade", "araştırma", "suç"]},
+                {word: "Kaçakçı", forbidden: ["yasa dışı", "sınır", "ticaret", "polis", "suç"]},
+                {word: "Casus", forbidden: ["gizli", "bilgi", "ajan", "takip", "devlet"]},
+                {word: "Ajan", forbidden: ["görev", "gizli", "takip", "casus", "operasyon"]},
+                {word: "Operasyon", forbidden: ["görev", "ekip", "plan", "müdahale", "çalışma"]},
+                {word: "Strateji", forbidden: ["plan", "taktik", "başarı", "yönetim", "karar"]},
+                {word: "Taktik", forbidden: ["plan", "spor", "strateji", "hamle", "başarı"]},
+                {word: "Laboratuvar", forbidden: ["deney", "bilim", "araştırma", "kimya", "test"]},
+                {word: "Kimyager", forbidden: ["laboratuvar", "bilim", "deney", "madde", "araştırma"]},
+                {word: "Astronom", forbidden: ["uzay", "yıldız", "teleskop", "gözlem", "bilim"]},
+                {word: "Mühendis", forbidden: ["proje", "teknik", "tasarım", "hesap", "üretim"]},
+                {word: "Mimar", forbidden: ["bina", "çizim", "proje", "tasarım", "yapı"]},
+                {word: "Taslak", forbidden: ["çizim", "plan", "ön çalışma", "proje", "fikir"]},
+                {word: "Maket", forbidden: ["model", "küçük", "tasarım", "örnek", "yapı"]},
+                {word: "Patent", forbidden: ["buluş", "hak", "ürün", "koruma", "belge"]},
+                {word: "Marka", forbidden: ["ürün", "logo", "şirket", "isim", "tanıtım"]},
+                {word: "Logo", forbidden: ["marka", "sembol", "şirket", "tasarım", "işaret"]},
+                {word: "Reklam", forbidden: ["tanıtım", "ürün", "televizyon", "marka", "satış"]},
+                {word: "Afiş", forbidden: ["duyuru", "reklam", "duvar", "etkinlik", "tanıtım"]},
+                {word: "Broşür", forbidden: ["tanıtım", "bilgi", "kağıt", "reklam", "dağıtım"]},
+                {word: "Kampanya", forbidden: ["indirim", "satış", "reklam", "fırsat", "müşteri"]},
+                {word: "Sponsor", forbidden: ["destek", "para", "etkinlik", "reklam", "marka"]},
+                {word: "Organizasyon", forbidden: ["etkinlik", "planlama", "ekip", "düzen", "çalışma"]},
+                {word: "Festival", forbidden: ["etkinlik", "müzik", "kutlama", "kalabalık", "eğlence"]},
+                {word: "Karnaval", forbidden: ["eğlence", "kostüm", "festival", "geçit", "kutlama"]},
+                {word: "Gösteri", forbidden: ["sahne", "izleyici", "performans", "etkinlik", "sanat"]},
+                {word: "Yarışma", forbidden: ["ödül", "rakip", "başarı", "katılım", "sonuç"]},
+                {word: "Jüri", forbidden: ["değerlendirme", "puan", "yarışma", "karar", "üye"]},
+                {word: "Ödül", forbidden: ["başarı", "hediye", "kazanmak", "madalya", "yarışma"]},
+                {word: "Başarı", forbidden: ["kazanmak", "hedef", "ödül", "çalışma", "sonuç"]},
+                {word: "Motivasyon", forbidden: ["istek", "hedef", "çalışma", "enerji", "başarı"]},
+                {word: "Disiplin", forbidden: ["düzen", "kural", "çalışma", "kontrol", "alışkanlık"]},
+                {word: "Lider", forbidden: ["yönetmek", "ekip", "sorumluluk", "önder", "karar"]},
+                {word: "Ortaklık", forbidden: ["iş", "paylaşım", "şirket", "anlaşma", "birlikte"]},
+                {word: "Girişim", forbidden: ["iş", "proje", "fikir", "yatırım", "şirket"]},
+                {word: "Yatırım", forbidden: ["para", "kazanç", "sermaye", "risk", "ekonomi"]},
+                {word: "Sermaye", forbidden: ["para", "yatırım", "şirket", "ekonomi", "kaynak"]},
+                {word: "Borsa", forbidden: ["hisse", "yatırım", "ekonomi", "piyasa", "para"]},
+                {word: "Döviz", forbidden: ["kur", "para", "yabancı", "ekonomi", "alışveriş"]},
+                {word: "Altın", forbidden: ["değerli", "yatırım", "sarı", "takı", "maden"]},
+                {word: "Gümüş", forbidden: ["metal", "takı", "değerli", "parlak", "yatırım"]},
+                {word: "Sigorta", forbidden: ["güvence", "poliçe", "zarar", "koruma", "ödeme"]},
+                {word: "Vergi", forbidden: ["devlet", "ödeme", "gelir", "para", "yasa"]},
+                {word: "Belediye", forbidden: ["şehir", "hizmet", "başkan", "yerel", "yönetim"]},
+                {word: "Nüfus", forbidden: ["insan", "sayı", "şehir", "ülke", "kayıt"]},
+                {word: "Mahalle", forbidden: ["sokak", "komşu", "semt", "ev", "yerleşim"]},
+                {word: "Semt", forbidden: ["mahalle", "bölge", "şehir", "yerleşim", "çevre"]},
+                {word: "Sokak", forbidden: ["yol", "ev", "mahalle", "cadde", "yürümek"]},
+                {word: "Cadde", forbidden: ["yol", "trafik", "mağaza", "şehir", "araç"]},
+                {word: "Meydan", forbidden: ["şehir", "kalabalık", "anıt", "buluşma", "alan"]},
+                {word: "Anıt", forbidden: ["tarih", "heykel", "hatıra", "yapı", "meydan"]},
+                {word: "Kule", forbidden: ["yüksek", "yapı", "şehir", "manzara", "bina"]},
+                {word: "Saray", forbidden: ["kral", "tarih", "büyük", "yapı", "yönetim"]},
+                {word: "Kale", forbidden: ["sur", "tarih", "savunma", "taş", "yapı"]},
+                {word: "Zindan", forbidden: ["hapishane", "karanlık", "kale", "mahkum", "yeraltı"]},
+                {word: "Mahkum", forbidden: ["ceza", "hapishane", "suç", "tutuklu", "mahkeme"]},
+                {word: "Gardiyan", forbidden: ["hapishane", "güvenlik", "mahkum", "görevli", "kontrol"]},
+                {word: "Gözcü", forbidden: ["izlemek", "kule", "nöbet", "dikkat", "koruma"]},
+                {word: "Kâşif", forbidden: ["keşif", "yolculuk", "harita", "yeni", "araştırma"]},
+                {word: "Mucit", forbidden: ["buluş", "fikir", "icat", "bilim", "yenilik"]},
+                {word: "İcat", forbidden: ["buluş", "yenilik", "teknoloji", "fikir", "ürün"]},
+                {word: "Teknoloji", forbidden: ["cihaz", "yenilik", "bilgisayar", "gelişim", "bilim"]},
+                {word: "Robotik", forbidden: ["robot", "otomasyon", "teknoloji", "yazılım", "mühendislik"]},
+                {word: "Sensör", forbidden: ["algılama", "cihaz", "veri", "ölçüm", "elektronik"]},
+                {word: "Devre", forbidden: ["elektronik", "akım", "kart", "bağlantı", "elektrik"]},
+                {word: "Uydu", forbidden: ["uzay", "iletişim", "yörünge", "dünya", "sinyal"]}
             ],
             zor: [
-                {word: "EPİSTEMOLOJİ", forbidden: ["Bilgi", "Bilim", "Felsefe", "İnsan", "Teori"]},
-                {word: "ONTOLOJI", forbidden: ["Varlık", "Felsefe", "Teori", "İnsan", "Bilim"]},
-                {word: "HERMENEUTİK", forbidden: ["Yorum", "Anlayış", "Metin", "Anlam", "Yorum"]},
-                {word: "FENOMENOLOJİ", forbidden: ["İnsan", "Bilinç", "Deneyim", "Teori", "Yönetim"]},
-                {word: "DİALEKTİK", forbidden: ["Tez", "Antitez", "Sentez", "Çatışma", "Felsefe"]},
-                {word: "EKLEKTİSİZM", forbidden: ["Seçme", "Harmanlama", "Felsefe", "Stil", "Sanat"]},
-                {word: "PANTEİZM", forbidden: ["Tanrı", "Doğa", "Eğrilik", "Felsefe", "İnsan"]},
-                {word: "APHORİZM", forbidden: ["Söz", "Kısa", "Cümle", "Düşün", "İfade"]},
-                {word: "METONYMY", forbidden: ["Söz", "Şekil", "Benzetme", "İfade", "Dil"]},
-                {word: "SİNEKDOŞE", forbidden: ["Parça", "Bütün", "Benzetme", "Söz", "Dil"]},
-                {word: "ANTONOMASYA", forbidden: ["Sözcük", "İnsan", "Taklidi", "Konuş", "Dil"]},
-                {word: "OKSİMORON", forbidden: ["Çelişki", "Söz", "Benzetme", "Anlam", "Sanat"]},
-                {word: "ZEUGMATİK", forbidden: ["Kelime", "Kullanım", "Hata", "Yanlış", "Dil"]},
-                {word: "PERİFRAZE", forbidden: ["Açıklama", "Söz", "Yanlış", "Dil", "İfade"]},
-                {word: "SİNESTEZİ", forbidden: ["Duyu", "Karışma", "Algı", "Sinir", "Beyin"]},
-                {word: "SOLİPSİZM", forbidden: ["Bilinç", "Kendisi", "Varlık", "Gerçek", "Felsefe"]},
-                {word: "RELATİVİZM", forbidden: ["Bağıl", "Mutlak", "Teori", "Görüş", "Felsefe"]},
-                {word: "NİHİLİZM", forbidden: ["Anlamsız", "Değer", "Anlam", "Anlam", "Varolma"]},
-                {word: "ABSURDİZM", forbidden: ["Anlamsız", "Camus", "Felsefe", "Anlam", "Mantık"]},
-                {word: "EXİSTENSİALİZM", forbidden: ["Var olma", "Felsefe", "Sartre", "İnsan", "Seçim"]},
-                {word: "KONTENJANS", forbidden: ["Tesadüf", "Olasılık", "Mümkün", "Felsefe", "Var"]},
-                {word: "TRANSENDEN", forbidden: ["Aştırma", "Felsefe", "Sınır", "Öte", "Kant"]},
-                {word: "KATAKRESIS", forbidden: ["Sözcük", "Yanlış", "Hata", "Dil", "Benzetme"]},
-                {word: "ANODİN", forbidden: ["Ağrı", "Rahatlama", "İlaç", "Teskin", "Çare"]},
-                {word: "ANODYNE", forbidden: ["Ağrısız", "Rahatlık", "Teskin", "Rahatlatıcı", "Çare"]},
-                {word: "ASİMPTOTİK", forbidden: ["Eğri", "Limit", "Matematik", "Yakın", "Sınır"]},
-                {word: "KATEGORİCAL", forbidden: ["Ahlak", "Kant", "Görev", "Evrensel", "Felsefe"]},
-                {word: "NOMEN", forbidden: ["Şey kendisi", "Kant", "Felsefe", "Bilinç", "Var"]},
-                {word: "QUALIA", forbidden: ["Deneyim", "Bilinç", "Algı", "Ruh", "Felsefe"]},
-                {word: "NOESIS", forbidden: ["Düşün", "Bilinç", "Algı", "Felsefe", "Ruh"]},
-                {word: "METAFİZİK", forbidden: ["Gerçeklik", "Var", "Felsefe", "Soyut", "Dışarı"]},
-                {word: "EPISTEMIK", forbidden: ["Bilgi", "Bilinç", "Anlayış", "Felsefe", "Kesinlik"]},
-                {word: "LOGOSENTRIZM", forbidden: ["Söz", "Merkez", "Felsefe", "Derrida", "Yazı"]},
-                {word: "TRAZENDENTAL", forbidden: ["Aştırma", "Kant", "Felsefe", "Çıktı", "Dış"]},
-                {word: "APORIAS", forbidden: ["Paradoks", "Çıkmazı", "Felsefe", "Yol", "Çelişki"]},
-                {word: "STRUKTÜRALİZM", forbidden: ["Sistem", "Felsefe", "Bağ", "Form", "İnsan"]},
-                {word: "POSTSTRÜKTÜRALİZM", forbidden: ["Sonra", "Yapı", "Felsefe", "Derrida", "Bozma"]},
-                {word: "SİMU LAKRA", forbidden: ["Sahte", "Gerçek", "Baudrillard", "İmge", "İlüzyon"]},
-                {word: "PERFORMATIF", forbidden: ["Söz", "Eylem", "Hareket", "Yapma", "Gerçekleştirme"]},
-                {word: "DİFERANS", forbidden: ["Fark", "Erteleme", "Derrida", "Ses", "Yazı"]},
-                {word: "APORETİK", forbidden: ["Çıkmazı", "Felsefe", "Yol", "Paradoks", "Çelişki"]},
-                {word: "PALİMPSESTİK", forbidden: ["Çok katman", "Yazı", "Tarih", "Silme", "Üstü"]},
-                {word: "HORIZONSAL", forbidden: ["Yatay", "Düzey", "Görüş", "Çizgi", "Ufuk"]},
-                {word: "İNTRİKATLI", forbidden: ["Karmaşık", "Şekli", "Dolanmış", "Entrik", "Zor"]},
-                {word: "KABALİSTİK", forbidden: ["Gizli", "Yahudi", "Felsefe", "Geleneksel", "Anlamı"]},
-                {word: "TAOİZM", forbidden: ["Yol", "Çince", "Felsefe", "Doğa", "Uyum"]},
-                {word: "OKKÜLTİZM", forbidden: ["Gizli", "Mistik", "Okült", "Esoterik", "Sihir"]},
-                {word: "ESKATOLOJİ", forbidden: ["Son", "Çağ", "Felsefe", "Kıyamet", "Dinsel"]},
-                {word: "TEORAPİLENTİK", forbidden: ["Tedavi", "İyileşme", "Çare", "Bakım", "Iyilik"]},
-                {word: "PATRİARKAL", forbidden: ["Baba", "Yönetim", "Erk", "Erkek", "Aile"]},
-                {word: "BİURETİK", forbidden: ["Çift", "Yönetim", "Güç", "Hakimiyet", "İkilik"]},
-                {word: "POLİVALANT", forbidden: ["Çok", "Değer", "Anlamı", "Kullanım", "Forma"]},
-                {word: "MONOLİTİK", forbidden: ["Tek", "Taş", "Büyük", "Yapı", "Değişmez"]},
-                {word: "HOLİSTİK", forbidden: ["Bütün", "Sistem", "Parçalar", "Tümüyle", "Genel"]},
-                {word: "FRAGMENTARİ", forbidden: ["Parça", "Kırık", "Bölümler", "Eksik", "Parçalı"]},
-                {word: "PLURALISTIK", forbidden: ["Çok", "Çeşitlilik", "Felsefe", "Görüş", "Sistem"]},
-                {word: "MONİZM", forbidden: ["Tek", "Tamsayı", "Felsefe", "Birlik", "Evren"]},
-                {word: "DUALİZM", forbidden: ["İkili", "Zıt", "Felsefe", "Ruh-Beden", "Birbirlerine"]},
-                {word: "TRİADİZM", forbidden: ["Üç", "Sayı", "Kutsal", "Tanrılık", "Form"]},
-                {word: "TELEOLOJİ", forbidden: ["Amaç", "Son", "Felsefe", "Amacı", "Nihai"]},
-                {word: "ARCHEYPE", forbidden: ["Örnek", "Original", "Form", "Model", "Prototip"]},
-                {word: "SİMBOLİZM", forbidden: ["İşaret", "Anlam", "Sanat", "Sembol", "İfade"]},
-                {word: "SYNESTHESIA", forbidden: ["Duyular", "Karışma", "Algı", "Sinir", "Kombinasyon"]},
-                {word: "ANAMORPHOSE", forbidden: ["Çarpık", "Görünüş", "Resim", "Perspektif", "Dış"]}
+                {word: "Paradoks", forbidden: ["çelişki", "mantık", "ikilem", "zıtlık", "çıkmazı"]},
+                {word: "Metafor", forbidden: ["benzetme", "edebiyat", "alış", "anlam", "şiir"]},
+                {word: "Antitez", forbidden: ["karşıtlık", "fikir", "tez", "sentez", "mantık"]},
+                {word: "Entropi", forbidden: ["düzensizlik", "fizik", "kaos", "termodinamik", "bozulma"]},
+                {word: "Kuantum", forbidden: ["parçacık", "fizik", "müyya", "sub-atomik", "mekanik"]},
+                {word: "Görelilik", forbidden: ["Einstein", "zaman", "ışık", "fizik", "sabitlik"]},
+                {word: "İroni", forbidden: ["ters anlam", "mizah", "alaycılık", "sarcasm", "beklenti"]},
+                {word: "Oksimoron", forbidden: ["zıt kavram", "tezat", "oxymoron", "çelişkili", "söz sanatı"]},
+                {word: "Simetri", forbidden: ["denge", "şekil", "geometri", "eşitlik", "müzakere"]},
+                {word: "Katalizör", forbidden: ["reaksiyon", "kimya", "hızlandırıcı", "ajan", "etki"]},
+                {word: "Hologram", forbidden: ["üç boyutlu", "görüntü", "projeksiyon", "ışık", "illüzyon"]},
+                {word: "Spektrum", forbidden: ["renk", "ışık", "aralık", "çeşitlilik", "gözlemci"]},
+                {word: "Hipotez", forbidden: ["tahmin", "bilim", "varsayım", "test", "iddia"]},
+                {word: "Teorem", forbidden: ["matematik", "ispat", "kural", "önerme", "gerçek"]},
+                {word: "Logaritma", forbidden: ["matematik", "üs", "sayı", "denklem", "logaritm"]},
+                {word: "Türev", forbidden: ["matematik", "değişim", "hız", "diferansiyel", "hesapla"]},
+                {word: "İntegral", forbidden: ["alan", "matematik", "toplama", "hesap", "integral"]},
+                {word: "Fraktal", forbidden: ["geometri", "tekrar", "mandelbrot", "şekil", "zooming"]},
+                {word: "Asteroît", forbidden: ["uzay", "kaya", "gezegen", "meteor", "yörünge"]},
+                {word: "Nebula", forbidden: ["bulutsu", "uzay", "yıldız", "gaz", "evren"]},
+                {word: "Galaksi", forbidden: ["yıldızlar", "uzay", "samanyolu", "gözlem", "kozmik"]},
+                {word: "Kara Delik", forbidden: ["çekim", "uzay", "ışık", "singularite", "evren"]},
+                {word: "Fotosentez", forbidden: ["bitki", "güneş", "oksijen", "klorofil", "enerji"]},
+                {word: "Evrim", forbidden: ["tür", "biyoloji", "Darwin", "doğal seçilim", "değişim"]},
+                {word: "Kromozom", forbidden: ["DNA", "gen", "kalıtım", "hücre", "mitoz"]},
+                {word: "Mutasyon", forbidden: ["genetik", "değişim", "DNA", "hata", "varyasyon"]},
+                {word: "Hücre", forbidden: ["biyoloji", "canlı", "organizmalar", "sitoplazma", "çekirdek"]},
+                {word: "Nöron", forbidden: ["beyin", "sinir", "elektrik", "nörotransmitter", "bağlantı"]},
+                {word: "Psikoloji", forbidden: ["davranış", "zihin", "ruh", "psikiyatri", "cognitif"]},
+                {word: "Felsefe", forbidden: ["düşünce", "sorgulama", "öğretmen", "metafizik", "epistemoloji"]},
+                {word: "Diplomasi", forbidden: ["devlet", "görüşme", "anlaşma", "büyükelçi", "uluslararası"]},
+                {word: "Jeopolitik", forbidden: ["ülke", "strateji", "sınır", "güç", "coğrafya"]},
+                {word: "Enflasyon", forbidden: ["ekonomi", "fiyat", "para", "satın alma gücü", "para birim"]},
+                {word: "Resesyon", forbidden: ["ekonomi", "kriz", "büyüme", "işsizlik", "depresyon"]},
+                {word: "Kapitalizm", forbidden: ["ekonomi", "piyasa", "malingan", "girişimci", "sermaye"]},
+                {word: "Sosyalizm", forbidden: ["ekonomi", "toplum", "eşitlik", "iş", "devlet"]},
+                {word: "Demokrasi", forbidden: ["seçim", "halk", "oy", "yönetim", "özgürlük"]},
+                {word: "Bürokrasi", forbidden: ["devlet", "işlem", "kural", "kurum", "prosedür"]},
+                {word: "Arkeoloji", forbidden: ["kazı", "tarih", "eser", "geçmiş", "insan"]},
+                {word: "Mitoloji", forbidden: ["tanrı", "efsane", "hikâye", "antik", "kehanetler"]},
+                {word: "Epistemoloji", forbidden: ["bilgi", "felsefe", "kesinlik", "inanç", "doğruluk"]},
+                {word: "Ontoloji", forbidden: ["varlık", "felsefe", "gerçeklik", "varlığı", "var olmak"]},
+                {word: "Fenomenoloji", forbidden: ["bilinç", "deneyim", "algı", "felsefe", "subjektif"]},
+                {word: "Dialektik", forbidden: ["tez", "antitez", "sentez", "çelişki", "Hegel"]},
+                {word: "Pragmatizm", forbidden: ["pratik", "felsefe", "sonuç", "işleyişi", "doğruluk"]},
+                {word: "Nihilizm", forbidden: ["anlamsız", "değer", "anlam", "inançsızlık", "boşluk"]},
+                {word: "Marksizm", forbidden: ["ekonomi", "sınıf", "felsefe", "Marx", "komünizm"]},
+                {word: "Feminizm", forbidden: ["kadın", "eşitlik", "haklılık", "cinsiyet", "toplum"]},
+                {word: "Ekofeminizm", forbidden: ["çevre", "kadın", "doğa", "haklar", "aktivizm"]},
+                {word: "Neodarwinizm", forbidden: ["evrim", "genetik", "Darwin", "adaptasyon", "seçilim"]},
+                {word: "Ultrasonografi", forbidden: ["tıp", "ses", "görüntü", "radyoloji", "doktor"]},
+                {word: "Nanotteknoloji", forbidden: ["nano", "parça", "teknoloji", "boyut", "madde"]},
+                {word: "Biyoteknoloji", forbidden: ["biyoloji", "teknoloji", "genetik", "icat", "hücre"]},
+                {word: "Kuantum Bilgisayar", forbidden: ["kubit", "hesap", "bilgisayar", "kuantum", "işlem"]},
+                {word: "Yapay Zeka", forbidden: ["makine", "öğrenme", "algoritma", "bilgisayar", "zeka"]},
+                {word: "Sembolizm", forbidden: ["işaret", "anlam", "sanat", "renk", "temsil"]},
+                {word: "Deconstruction", forbidden: ["metin", "felsefe", "Derrida", "anlam", "yapı"]}
             ]
         };
 
@@ -1231,18 +1163,16 @@
             teams: [],
             difficulty: 'orta',
             timeLimit: 120,
-            passesPerTeam: 3,
             scores: {},
             currentTeamIdx: 0,
             wordIdx: 0,
             timeLeft: 120,
-            passesLeft: 3,
             timerInterval: null,
             isActive: false,
             isPaused: false,
             usedWords: [],
             totalCorrect: 0,
-            totalPassed: 0,
+            totalTabu: 0,
             soundEnabled: true,
             startTime: 0,
             elapsedTime: 0
@@ -1323,12 +1253,11 @@
             game.currentTeamIdx = 0;
             game.wordIdx = 0;
             game.timeLeft = game.timeLimit;
-            game.passesLeft = game.passesPerTeam;
             game.isActive = true;
             game.isPaused = false;
             game.usedWords = [];
             game.totalCorrect = 0;
-            game.totalPassed = 0;
+            game.totalTabu = 0;
             game.startTime = Date.now();
 
             document.getElementById('statsBtn').style.display = 'block';
@@ -1372,12 +1301,8 @@
             document.getElementById('currentScore').textContent = game.scores[team];
             document.getElementById('wordCount').textContent = game.usedWords.length;
             document.getElementById('roundNum').textContent = `${game.wordIdx + 1}/${Math.ceil(game.timeLimit / 2)}`;
-            
-            const passBtn = document.getElementById('passBtn');
-            passBtn.textContent = `⏭️ PAS (${game.passesLeft})`;
-            passBtn.disabled = game.passesLeft <= 0;
 
-            document.getElementById('passInfo').textContent = `Takım: ${team} | Puan: ${game.scores[team]} | Kalan Pas: ${game.passesLeft}`;
+            document.getElementById('passInfo').textContent = `Takım: ${team} | Puan: ${game.scores[team]}`;
 
             document.getElementById('scoresGrid').innerHTML = game.teams.map(t => `
                 <div class="score-item ${t === team ? 'active' : ''}">
@@ -1397,31 +1322,21 @@
             showWord();
         }
 
-        // Pas
-        function markPass() {
-            if (!game.isActive || game.isPaused || game.passesLeft <= 0) return;
-            game.passesLeft--;
-            game.totalPassed++;
-            playSound('pass');
-            updateUI();
-            showWord();
-        }
-
-        // Geçş (sonraki takım)
-        function markSkip() {
+        // TABU - 1 Puan Kır
+        function markTabu() {
             if (!game.isActive || game.isPaused) return;
-            game.currentTeamIdx = (game.currentTeamIdx + 1) % game.teams.length;
-            game.passesLeft = game.passesPerTeam;
-            game.wordIdx++;
-            playSound('skip');
-
-            if (game.currentTeamIdx === 0) {
-                if (game.usedWords.length >= 50) {
-                    endGame();
-                    return;
-                }
-            }
-
+            
+            game.scores[game.teams[game.currentTeamIdx]]--;
+            game.totalTabu++;
+            
+            // Penalty göster
+            const penalty = document.createElement('div');
+            penalty.className = 'tabu-penalty';
+            penalty.textContent = '-1 PUAN';
+            document.body.appendChild(penalty);
+            setTimeout(() => penalty.remove(), 1000);
+            
+            playSound('tabu');
             updateUI();
             showWord();
         }
@@ -1444,7 +1359,13 @@
 
                 if (game.timeLeft <= 0) {
                     clearInterval(game.timerInterval);
-                    endGame();
+                    // Otomatik takım değişimi
+                    game.currentTeamIdx = (game.currentTeamIdx + 1) % game.teams.length;
+                    game.timeLeft = game.timeLimit;
+                    game.wordIdx++;
+                    updateUI();
+                    showWord();
+                    startTimer();
                 }
             }, 1000);
         }
@@ -1512,7 +1433,7 @@
 
             document.getElementById('totalWords').textContent = totalWords;
             document.getElementById('correctWords').textContent = game.totalCorrect;
-            document.getElementById('passedWords').textContent = game.totalPassed;
+            document.getElementById('tabuCount').textContent = game.totalTabu;
             document.getElementById('successRate').textContent = successRate + '%';
 
             switchScreen('resultsScreen');
@@ -1521,7 +1442,6 @@
         // İstatistikleri göster
         function showStats() {
             const teamStats = game.teams.map(t => {
-                const correct = Object.values(game.scores).reduce((a, b) => a + b, 0);
                 return `<div class="stat-row"><span class="stat-label">${t}</span><span class="stat-value">${game.scores[t]} puan</span></div>`;
             }).join('');
 
@@ -1567,10 +1487,8 @@
 
             if (type === 'correct') {
                 oscillator.frequency.value = 800;
-            } else if (type === 'pass') {
-                oscillator.frequency.value = 600;
-            } else if (type === 'skip') {
-                oscillator.frequency.value = 400;
+            } else if (type === 'tabu') {
+                oscillator.frequency.value = 200;
             }
 
             oscillator.start(audioContext.currentTime);
@@ -1596,8 +1514,7 @@
         document.addEventListener('keydown', (e) => {
             if (!game.isActive || game.isPaused) return;
             if (e.code === 'Space') { e.preventDefault(); markCorrect(); }
-            if (e.code === 'ArrowRight') { e.preventDefault(); markSkip(); }
-            if (e.code === 'ArrowLeft') { e.preventDefault(); markPass(); }
+            if (e.code === 'ArrowLeft') { e.preventDefault(); markTabu(); }
         });
     </script>
 </body>
