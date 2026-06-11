@@ -1,0 +1,1604 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TABU OYUNU</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 42px;
+            color: #667eea;
+            margin: 0;
+            flex: 1;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .icon-btn:hover {
+            background: #e0e0e0;
+            transform: scale(1.1);
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; } to { opacity: 1; }
+        }
+
+        /* ===== SETUP SCREEN ===== */
+        .setup-form {
+            display: grid;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: grid;
+            gap: 10px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #333;
+            font-size: 15px;
+        }
+
+        .difficulty-buttons, .time-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn-option {
+            padding: 12px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .btn-option:hover {
+            border-color: #667eea;
+        }
+
+        .btn-option.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .teams-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .teams-section h3 {
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .add-team-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .add-team-group input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .btn-add {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-add:hover {
+            background: #5568d3;
+        }
+
+        .teams-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .team-tag {
+            background: #667eea;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .team-tag button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .error {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        /* ===== GAME SCREEN ===== */
+        .game-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .team-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .timer {
+            font-size: 40px;
+            font-weight: 700;
+            color: #e74c3c;
+            font-family: 'Courier New', monospace;
+            min-width: 100px;
+            text-align: right;
+        }
+
+        .timer.warning {
+            animation: pulse 0.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .game-toolbar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .btn-mini {
+            padding: 8px 12px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-mini:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-pause {
+            background: #3498db;
+            color: white;
+            border: none;
+        }
+
+        .btn-pause:hover {
+            background: #2980b9;
+        }
+
+        .btn-end {
+            background: #e74c3c;
+            color: white;
+            border: none;
+        }
+
+        .btn-end:hover {
+            background: #c0392b;
+        }
+
+        .game-info-row {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .info-box {
+            text-align: center;
+            flex: 1;
+            min-width: 80px;
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: #999;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .info-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #667eea;
+            margin-top: 3px;
+        }
+
+        .word-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 50px 30px;
+            text-align: center;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .difficulty-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .word-text {
+            font-size: 50px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            word-break: break-word;
+        }
+
+        .forbidden-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            opacity: 0.8;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .forbidden-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .forbidden-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .game-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .btn-game {
+            padding: 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-correct {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-correct:hover:not(:disabled) {
+            background: #229954;
+            transform: translateY(-3px);
+        }
+
+        .btn-pass {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-pass:hover:not(:disabled) {
+            background: #e67e22;
+            transform: translateY(-3px);
+        }
+
+        .btn-skip {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-skip:hover:not(:disabled) {
+            background: #c0392b;
+            transform: translateY(-3px);
+        }
+
+        .btn-game:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pass-info {
+            text-align: center;
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            color: #856404;
+            font-size: 13px;
+        }
+
+        .scores-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .score-item {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border-left: 4px solid #ddd;
+        }
+
+        .score-item.active {
+            background: #e8f0ff;
+            border-left: 4px solid #27ae60;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .score-team {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .score-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        /* ===== PAUSE SCREEN ===== */
+        .pause-overlay {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            color: white;
+        }
+
+        .pause-overlay h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+
+        .pause-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .btn-pause-action {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-resume {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-resume:hover {
+            background: #229954;
+        }
+
+        .btn-quit {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-quit:hover {
+            background: #c0392b;
+        }
+
+        /* ===== STATS SCREEN ===== */
+        .stats-container {
+            display: grid;
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-card h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #666;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        /* ===== RESULTS SCREEN ===== */
+        .results-box {
+            text-align: center;
+        }
+
+        .results-title {
+            font-size: 32px;
+            color: #27ae60;
+            margin-bottom: 25px;
+            font-weight: 700;
+        }
+
+        .winner-box {
+            background: linear-gradient(135deg, #f39c12 0%, #e74c3c 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+        }
+
+        .winner-box h2 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .winner-box p {
+            font-size: 18px;
+            opacity: 0.95;
+        }
+
+        .final-scores {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .final-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+            text-align: center;
+        }
+
+        .final-card.winner {
+            border: 3px solid #f39c12;
+            background: #fffbf0;
+        }
+
+        .final-team {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .final-score {
+            font-size: 36px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .btn-restart {
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .btn-restart:hover {
+            background: #5568d3;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 350px;
+        }
+
+        .modal-content h2 {
+            font-size: 26px;
+            color: #e74c3c;
+            margin-bottom: 15px;
+        }
+
+        .modal-content p {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 15px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .modal-buttons button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-confirm {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            background: #c0392b;
+        }
+
+        .btn-cancel {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #7f8c8d;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 32px;
+            }
+
+            .word-text {
+                font-size: 36px;
+            }
+
+            .game-controls {
+                grid-template-columns: 1fr;
+            }
+
+            .game-top {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .timer {
+                text-align: left;
+                width: 100%;
+            }
+
+            .difficulty-buttons, .time-options {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 TABU</h1>
+            <div class="header-buttons">
+                <button class="icon-btn" id="soundBtn" onclick="toggleSound()" title="Ses">🔊</button>
+                <button class="icon-btn" id="statsBtn" style="display:none" onclick="showStats()" title="İstatistik">📊</button>
+            </div>
+        </div>
+
+        <!-- SETUP SCREEN -->
+        <div id="setupScreen" class="screen active">
+            <form class="setup-form" onsubmit="startGame(event)">
+                <div class="form-group">
+                    <label>Zorluk Seviyesi</label>
+                    <div class="difficulty-buttons">
+                        <button type="button" class="btn-option" data-difficulty="kolay">KOLAY</button>
+                        <button type="button" class="btn-option" data-difficulty="orta">ORTA</button>
+                        <button type="button" class="btn-option" data-difficulty="zor">ZOR</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Süre</label>
+                    <div class="time-options">
+                        <button type="button" class="btn-option" data-time="60">1 DK</button>
+                        <button type="button" class="btn-option" data-time="120">2 DK</button>
+                        <button type="button" class="btn-option" data-time="180">3 DK</button>
+                    </div>
+                </div>
+
+                <div class="teams-section">
+                    <h3>Takımlar</h3>
+                    <div class="add-team-group">
+                        <input type="text" id="teamInput" placeholder="Takım adı girin..." maxlength="15">
+                        <button type="button" class="btn-add" onclick="addTeam()">EKLE</button>
+                    </div>
+                    <div class="teams-list" id="teamsList"></div>
+                    <div class="error" id="teamError"></div>
+                </div>
+
+                <button type="submit" class="btn-start">OYUNU BAŞLAT</button>
+            </form>
+        </div>
+
+        <!-- GAME SCREEN -->
+        <div id="gameScreen" class="screen">
+            <div class="game-toolbar">
+                <button class="btn-mini btn-pause" onclick="togglePause()">⏸️ DURAKLAT</button>
+                <button class="btn-mini btn-end" onclick="confirmEndGame()">⏹️ OYUNU BİTİR</button>
+                <button class="btn-mini" id="soundMinBtn" onclick="toggleSound()">🔊 SES</button>
+            </div>
+
+            <div class="game-top">
+                <div class="team-name" id="currentTeam">TAKIM</div>
+                <div class="timer" id="timer">120</div>
+            </div>
+
+            <div class="scores-grid" id="scoresGrid"></div>
+
+            <div class="game-info-row">
+                <div class="info-box">
+                    <div class="info-label">Sırada</div>
+                    <div class="info-value" id="roundNum">1/10</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Puan</div>
+                    <div class="info-value" id="currentScore">0</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Kelime</div>
+                    <div class="info-value" id="wordCount">0</div>
+                </div>
+            </div>
+
+            <div class="pass-info" id="passInfo"></div>
+
+            <div class="word-card">
+                <div class="difficulty-badge" id="diffBadge">KOLAY</div>
+                <div class="word-text" id="wordDisplay">HAZIR</div>
+                <div class="forbidden-title">YASAKLI SÖZCÜKLER</div>
+                <div class="forbidden-list" id="forbiddenList"></div>
+            </div>
+
+            <div class="game-controls">
+                <button class="btn-game btn-correct" onclick="markCorrect()">✅ DOĞRU</button>
+                <button class="btn-game btn-pass" id="passBtn" onclick="markPass()">⏭️ PAS</button>
+                <button class="btn-game btn-skip" onclick="markSkip()">⏭️ GEÇŞ</button>
+            </div>
+        </div>
+
+        <!-- PAUSE SCREEN -->
+        <div id="pauseScreen" class="screen">
+            <div class="pause-overlay">
+                <h2>⏸️ OYUN DURAKLATILDI</h2>
+                <p style="font-size: 18px; margin-top: 20px;">Oyunu devam ettirmeye hazır mısın?</p>
+                <div class="pause-buttons">
+                    <button class="btn-pause-action btn-resume" onclick="togglePause()">DEVAM ET</button>
+                    <button class="btn-pause-action btn-quit" onclick="confirmEndGame()">OYUNU BİTİR</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESULTS SCREEN -->
+        <div id="resultsScreen" class="screen">
+            <div class="results-box">
+                <div class="results-title">🎉 OYUN BİTTİ!</div>
+                <div id="winnerBox"></div>
+                <div class="final-scores" id="finalScores"></div>
+                <div class="stat-card" style="margin-bottom: 20px;">
+                    <h3>📊 Oyun İstatistikleri</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Toplam Kelime:</span>
+                        <span class="stat-value" id="totalWords">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Bilinen Kelime:</span>
+                        <span class="stat-value" id="correctWords">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Geçilen Kelime:</span>
+                        <span class="stat-value" id="passedWords">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Başarı Oranı:</span>
+                        <span class="stat-value" id="successRate">0%</span>
+                    </div>
+                </div>
+                <button class="btn-restart" onclick="backToSetup()">YENİDEN BAŞLA</button>
+            </div>
+        </div>
+
+        <!-- STATS MODAL -->
+        <div id="statsModal" class="modal">
+            <div class="modal-content" style="max-width: 500px;">
+                <h2>📊 OYUN İSTATİSTİKLERİ</h2>
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <h3>Takım Performansı</h3>
+                        <div id="teamStats"></div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Oyun Özeti</h3>
+                        <div class="stat-row">
+                            <span class="stat-label">Toplam Kelime:</span>
+                            <span class="stat-value" id="statsTotal">0</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Geçen Süre:</span>
+                            <span class="stat-value" id="statsTime">0s</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Zorluk:</span>
+                            <span class="stat-value" id="statsDiff">ORTA</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn-restart" onclick="closeStats()" style="margin-top: 20px; width: 100%;">KAPAT</button>
+            </div>
+        </div>
+
+        <!-- CONFIRM MODAL -->
+        <div id="confirmModal" class="modal">
+            <div class="modal-content">
+                <h2>⚠️ OYUNU BİTİRMEK İSTİYOR MUSUN?</h2>
+                <p>Oyun bitmemiş. Emin misin?</p>
+                <div class="modal-buttons">
+                    <button class="btn-confirm" onclick="endGameConfirmed()">EVET, BİTİR</button>
+                    <button class="btn-cancel" onclick="closeConfirmModal()">HAYIR, DEVAM ET</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== KELIME VERİTABANI =====
+        const words = {
+            kolay: [
+                {word: "KÖPEĞİ", forbidden: ["Hayvan", "Evcil", "Çiftlikte", "Dili", "Arkadaş"]},
+                {word: "KAT", forbidden: ["Bina", "Yüksek", "Seviye", "Üst", "Duvara çarpılan"]},
+                {word: "PİDE", forbidden: ["Türk yemeği", "Ekmek", "Fırın", "Peynir", "Lezzet"]},
+                {word: "TELEFON", forbidden: ["Cep", "Konuşma", "Teknoloji", "Ekran", "Araç"]},
+                {word: "KÜTÜPHANE", forbidden: ["Kitap", "Sessizlik", "Okuma", "Bilgi", "Yer"]},
+                {word: "BALIK", forbidden: ["Deniz", "Hayvan", "Yüzgeç", "Su", "Olta"]},
+                {word: "MASA", forbidden: ["Mobilya", "Oturma", "Ayak", "Yüzey", "Iş"]},
+                {word: "KALECİ", forbidden: ["Futbol", "Koruma", "Kalesi", "Net", "Spor"]},
+                {word: "GÖZLÜK", forbidden: ["Göz", "Mercek", "Yüz", "Çerçeve", "Görme"]},
+                {word: "AYAKKABI", forbidden: ["Ayak", "Giyim", "Ayakkabıcı", "Deri", "Yürüme"]},
+                {word: "SAÇ", forbidden: ["Baş", "Kuaför", "Tıraş", "Sakal", "Saç dökülme"]},
+                {word: "KULAÇ", forbidden: ["Yüzme", "Geniş", "Mesafe", "Ölçü", "Kol"]},
+                {word: "ZİL", forbidden: ["Ses", "Uyarmak", "Kapı", "Ses çıkaran", "Elektrik"]},
+                {word: "PENCERE", forbidden: ["Cam", "Hava", "Dış", "Oda", "Işık"]},
+                {word: "ÇATAL", forbidden: ["Mutfak", "Yemek aracı", "Metal", "Kaşık", "Bıçak"]},
+                {word: "KAN", forbidden: ["Vücut", "Kırmızı", "Kan grubu", "Kan taşı", "Dolaşım"]},
+                {word: "AY", forbidden: ["Gece", "Gezegen", "Yıldız", "Ay taşı", "Işık"]},
+                {word: "ARABA", forbidden: ["Taşıt", "Tekerlek", "Motor", "Direksiyon", "Yol"]},
+                {word: "ÖĞRETMEN", forbidden: ["Öğrenci", "Okul", "Sınıf", "Kütüphaneci", "Eğitim"]},
+                {word: "POLİS", forbidden: ["Suç", "Ceza", "Hukuk", "Bekçi", "Güvenlik"]},
+                {word: "DOKTOR", forbidden: ["Sağlık", "Hasta", "Hastane", "İlaç", "Ameliyat"]},
+                {word: "KAPTAN", forbidden: ["Gemi", "Komutan", "Başkan", "Kaptanlık", "Liman"]},
+                {word: "ASLAN", forbidden: ["Hayvan", "Kedi", "Afrika", "Vahşi", "Saçı"]},
+                {word: "ŞAPKASı", forbidden: ["Başlık", "Kafası", "Giysi", "Kafa kapatan", "Başa giyilen"]},
+                {word: "ÇAKMA", forbidden: ["Alet", "Açmak", "Somun", "Vida", "Düz bıçak"]},
+                {word: "OYUN", forbidden: ["Eğlence", "Kazanma", "Kaybetme", "Kuralı", "Oynamak"]},
+                {word: "BİLGİSAYAR", forbidden: ["Teknoloji", "Ekran", "Fare", "Klavye", "İnternet"]},
+                {word: "FAKSİMİLE", forbidden: ["İletişim", "Belge", "Yazıcı", "Kağıt", "Kopyala"]},
+                {word: "SAAT", forbidden: ["Zaman", "İbre", "Bakır", "Bilezik", "Saatçi"]},
+                {word: "ŞEMSİYE", forbidden: ["Yağmur", "Koruma", "Tutaç", "Kumaş", "Güneş"]},
+                {word: "SİGARA", forbidden: ["Tütün", "İçme", "Zararlı", "Koku", "Sigara paketi"]},
+                {word: "EĞER", forbidden: ["Alet", "Kütük", "Kesme", "Demir", "Şey"]},
+                {word: "VİDA", forbidden: ["Alet", "Metal", "Çevirme", "Vida anahtarı", "Bağlama"]},
+                {word: "HAMAK", forbidden: ["Uyku", "Kumaş", "Ağaç", "Asılı", "Dinlenme"]},
+                {word: "ÇAN", forbidden: ["Ses", "Metal", "Çalmak", "Kilise", "Çıngırak"]},
+                {word: "ÇARK", forbidden: ["Döner", "Tekerlek", "Makine", "Dönme", "Motor"]},
+                {word: "IŞIK", forbidden: ["Aydınlık", "Lamba", "Güneş", "Elektrik", "Parla"]},
+                {word: "VERİMLİ", forbidden: ["Üretim", "Hızlı", "Verim", "Sonuç", "Başarı"]},
+                {word: "AÇIK HAVA", forbidden: ["Dış", "Gök", "Hava", "Rüzgar", "Doğa"]},
+                {word: "GÖKKUŞAĞI", forbidden: ["Renk", "Değişim", "Işık", "Prizma", "Yay"]},
+                {word: "ÇAĞ", forbidden: ["Zaman", "Dönem", "Tarih", "Yıl", "İnsan"]},
+                {word: "ÇALAR SAATİ", forbidden: ["Alet", "Metal", "Ses", "Çıngırak", "Çalmak"]},
+                {word: "KUTU", forbidden: ["Depolama", "Dikdörtgen", "Kapak", "Karton", "Saklama"]},
+                {word: "ÇELİK", forbidden: ["Metal", "Demir", "Güç", "Sertlik", "Bıçak"]},
+                {word: "AYNA", forbidden: ["Yansıma", "Cam", "Görüş", "Yüz", "Temizlik"]},
+                {word: "KASA", forbidden: ["Para", "Güvenlik", "Depo", "Kilit", "Açmak"]},
+                {word: "KARTON", forbidden: ["Kağıt", "Kutu", "Sert", "Malzeme", "Ambalaj"]},
+                {word: "KÖŞE", forbidden: ["Açı", "Eğilme", "Kırma", "Bina", "Kenar"]},
+                {word: "YELKOVAN", forbidden: ["Saat", "Zaman", "Hareket", "İbrit", "Dakika"]},
+                {word: "KOŞU", forbidden: ["Hız", "Hareketi", "Spor", "Bacak", "Yorgun"]},
+                {word: "TOKATLAMA", forbidden: ["Çok", "Sert", "Darbe", "Vurma", "Acı"]},
+                {word: "SAHA", forbidden: ["Yer", "Boş", "Geniş", "Açık", "Tarla"]},
+                {word: "KUYRUK", forbidden: ["Hayvan", "Son", "Özür", "Birleşme", "Arkası"]},
+                {word: "KİTAP", forbidden: ["Okuma", "Sayfa", "Yazar", "Yazı", "Bilgi"]},
+                {word: "BAŞKAN", forbidden: ["Lider", "Yönetim", "Seçim", "Güç", "Başkanlık"]},
+                {word: "YATAK", forbidden: ["Uyku", "Misafirlik", "Mobilya", "Çarşaf", "Yatış"]},
+                {word: "KAPI", forbidden: ["Giriş", "Çıkış", "Anahtar", "Kilit", "Açma"]},
+                {word: "KÖPRİ", forbidden: ["Geçiş", "Su", "Köprülemek", "İnşaat", "Yol"]},
+                {word: "OYUNCU", forbidden: ["Rol", "Sahne", "Tiyatro", "Film", "Oyunculuk"]},
+                {word: "FUTBOLCU", forbidden: ["Top", "Spor", "Saha", "Oyun", "Takım"]},
+                {word: "BALIKÇI", forbidden: ["Balık", "Su", "Ağ", "Teknesi", "Olta"]},
+                {word: "KAMERAMAN", forbidden: ["Kamera", "Film", "Sahnesi", "Çekim", "Tiyatro"]},
+                {word: "MÜZİSYEN", forbidden: ["Müzik", "Enstrüman", "Ses", "Nota", "Gitar"]},
+                {word: "DOKTOR", forbidden: ["Hastane", "İlaç", "Ameliyat", "Tanı", "Enjeksiyon"]},
+                {word: "MÜHENDIS", forbidden: ["Bina", "Makine", "Tasarım", "Proje", "İnşaat"]},
+                {word: "AVUKAT", forbidden: ["Dava", "Mahkeme", "Kanun", "Ceza", "Hukuk"]},
+                {word: "DAMAT", forbidden: ["Evlilik", "Gelin", "Nikah", "Düğün", "Gerdek"]},
+                {word: "GELIN", forbidden: ["Evlilik", "Damat", "Nikah", "Düğün", "Beyaz"]},
+                {word: "DANSÇI", forbidden: ["Dans", "Müzik", "Ritim", "Hareket", "Sahne"]},
+                {word: "AŞÇI", forbidden: ["Yemek", "Mutfak", "Pişirme", "Sos", "Restoran"]},
+                {word: "BARMENYardımcı", forbidden: ["Bar", "İçki", "Cam", "Servis", "Meşrubat"]},
+                {word: "TARIH", forbidden: ["Zaman", "Eski", "Yazı", "Belgeler", "Olaylar"]},
+                {word: "COĞRAFYA", forbidden: ["Harita", "Yer", "Ülke", "Bölge", "Dış"]},
+                {word: "BIYOLOJI", forbidden: ["Canlı", "Hücre", "Genetik", "Evrim", "Organizmalar"]},
+                {word: "KİMYA", forbidden: ["Atom", "Element", "Reaksiyon", "Madde", "Laboruvar"]},
+                {word: "FİZİK", forbidden: ["Hareket", "Enerji", "Kuvvet", "Işık", "Atom"]},
+                {word: "MATEMATİK", forbidden: ["Rakam", "Formül", "Sayı", "Denklem", "Hesap"]},
+                {word: "SANAT", forbidden: ["Ressam", "Resim", "Heykel", "Müze", "Güzellik"]},
+                {word: "ŞİİR", forbidden: ["Şair", "Yazı", "Kafiye", "Duygu", "Edebiyat"]},
+                {word: "ROMAN", forbidden: ["Yazar", "Hikaye", "Karakterler", "Olay", "Kitap"]},
+                {word: "TİYATRO", forbidden: ["Oyuncu", "Sahne", "Oyun", "Perdesi", "Seyirciler"]},
+                {word: "MÜZİK", forbidden: ["Not", "Şarkı", "Enstrüman", "Melodi", "Ritim"]},
+                {word: "FUTBOL", forbidden: ["Top", "Saha", "Kaleci", "Gol", "Oyuncu"]},
+                {word: "VOLEYBOL", forbidden: ["Top", "Ağ", "Saha", "Takım", "Oyun"]},
+                {word: "BASKETBOLTopu", forbidden: ["Top", "Sepet", "Saha", "Oyuncu", "Şut"]},
+                {word: "TENIS", forbidden: ["Top", "Raket", "Saha", "Ağ", "Oyuncu"]},
+                {word: "ŞAH", forbidden: ["Satranç", "Taş", "Saltanat", "Kral", "Kraliçe"]},
+                {word: "KANAL", forbidden: ["Su", "Yayın", "Televizyon", "Geçiş", "Bulaşık"]},
+                {word: "KÜLTÜR", forbidden: ["Sanat", "Âdet", "Gelenek", "Medeniyyet", "Karakter"]},
+                {word: "SOSYAL", forbidden: ["İnsan", "Toplum", "İlişki", "Bağlantı", "Ağ"]},
+                {word: "TEKNOLOJİ", forbidden: ["Bilgisayar", "İnvansyon", "Ileri", "Teknisi", "Makineler"]},
+                {word: "İNTERNET", forbidden: ["Web", "Bilgisayar", "Bağlantı", "Data", "Siber"]},
+                {word: "ELEKTRİSİTE", forbidden: ["Güç", "Akım", "Enerji", "Ampul", "Voltaj"]},
+                {word: "GAS", forbidden: ["Hava", "Yakıt", "Buhar", "Madde", "Belediye"]},
+                {word: "SUYUN", forbidden: ["Sıvı", "Deniz", "Nehir", "H2O", "Tatlı"]},
+                {word: "KAYNAĞININ", forbidden: ["Başlangıç", "Kökenin", "Menba", "Ufuk", "Atma"]},
+                {word: "Büyükelçi", forbidden: ["Diplomat", "Devlet", "Temsilci", "Elçilerin", "Sözleşme"]},
+                {word: "MERHAMET", forbidden: ["Şefkat", "Affetme", "Acı", "Duygusu", "Hissiyat"]},
+                {word: "CESARET", forbidden: ["Öğütlenme", "Yürek", "Korkusuzluk", "Güçlü", "Korku"]},
+                {word: "ERDEM", forbidden: ["İyilik", "Nitelik", "Güzellik", "Fazilet", "Ahlak"]},
+                {word: "HAIN", forbidden: ["İhanetçi", "Dışarı Satan", "Düşman", "Çift Yüzlü", "Sadakatsiz"]},
+                {word: "HEKIM", forbidden: ["Doktor", "Tıp", "Sağlık", "Hastalar", "Tedavi"]},
+                {word: "KAYNAKLAR", forbidden: ["Menba", "Atış", "Bilgi", "Kaynak", "Referans"]},
+                {word: "TOPOGRAPHY", forbidden: ["Harita", "Yer", "Şekil", "Coğrafya", "Yerleşim"]},
+                {word: "SEMBOL", forbidden: ["İşaret", "Anlam", "Temsilci", "Simge", "Yazı"]},
+                {word: "TÜLÜCEMONEİ", forbidden: ["Üzüm", "Meyve", "Bahçe", "Ağaç", "Tatlı"]},
+                {word: "VİRÜS", forbidden: ["Hastalık", "Enfeksiyon", "Salgın", "Mikro", "Parçacık"]},
+                {word: "ALOPECIA", forbidden: ["Saç", "Kaybı", "Kalvitilk", "Deri", "Hastalık"]},
+                {word: "GLANDULA", forbidden: ["Organ", "Bezle", "Salgısı", "Vücudunda", "Kimya"]},
+                {word: "CİDDİ", forbidden: ["Ağır", "Önemli", "Sorun", "Tehlikeli", "Tehlike"]},
+                {word: "AÇIKÇA", forbidden: ["Belirgin", "Sabit", "Klâr", "Seçilmiş", "Anlaşılması"]},
+                {word: "ART", forbidden: ["Sanat", "Teknik", "Yaratı", "Beceri", "Keşif"]},
+                {word: "BEYAZSAVHİ", forbidden: ["Kâğıt", "Boşluk", "Temiz", "Blok", "Sayfaları"]},
+                {word: "CENAZE", forbidden: ["Ölü", "Defin", "Ağlamak", "Tören", "Mezar"]},
+                {word: "DOLAYLIZAMANSAL", forbidden: ["Zaman", "Saat", "Dönem", "Aralık", "Geçici"]},
+                {word: "EVİN", forbidden: ["Yaşanacak", "Yer", "Aile", "Çatı", "Duvarlar"]},
+                {word: "GÜZEL", forbidden: ["Hoş", "Estetik", "Cazibeysi", "Güz", "Çekici"]},
+                {word: "HOP", forbidden: ["Sekme", "Atlama", "Zıplama", "Hareket", "Parçalanma"]},
+                {word: "İŞLEY", forbidden: ["Işletilir", "Çalışır", "Başlattığından", "Başlangıç", "Denetim"]},
+                {word: "JİM", forbidden: ["Spor", "Antrenman", "Dumbbell", "Egzersiz", "Vücut"]},
+                {word: "KALESi", forbidden: ["Futbol", "Bekçiler", "İçinde", "Koruma", "Kapısı"]},
+                {word: "LAPİS", forbidden: ["Taş", "Mavi", "Mineral", "Değerli", "Cevher"]},
+                {word: "MALZAMESİ", forbidden: ["İhtiyaç", "Parçaları", "Maddeler", "Aksesuarı", "Alet"]},
+                {word: "NATÜR", forbidden: ["Doğa", "Canlı", "Tabii", "Vahşi", "Ortam"]},
+                {word: "OKOŞİSTEM", forbidden: ["Doğa", "Canlılar", "Çevre", "Yaşam", "Biyoloji"]},
+                {word: "PARİS", forbidden: ["Şehir", "Fransa", "Başkent", "Seine", "Eiffel"]},
+                {word: "QUOTEBİLGİ", forbidden: ["Söz", "Yazı", "Alıntı", "Yazar", "Cümle"]},
+                {word: "RAKIN", forbidden: ["İçki", "Türk", "Anason", "Rakı", "Meşrubat"]},
+                {word: "SAMURAIMI", forbidden: ["Savaşçı", "Japon", "Samuray", "Kılıç", "Asker"]},
+                {word: "TABUMİSMAR", forbidden: ["Yasak", "Oyun", "Söylemek", "Gizli", "Konuşma"]},
+                {word: "TALÜSE", forbidden: ["Boy", "Uzunluk", "Yükseklik", "Cücelik", "Ölçü"]},
+                {word: "UMMAN", forbidden: ["Deniz", "Geniş", "Akım", "Dalga", "Sıvı"]},
+                {word: "VANSURÜ", forbidden: ["Batı", "Harita", "Açıkça", "Coğrafya", "Yer"]},
+                {word: "WATTMETRE", forbidden: ["Güç", "Elektrik", "Ölçü", "Alet", "Voltaj"]},
+                {word: "XIFITLER", forbidden: ["Konuşma", "Söz", "Dil", "Anlamı", "İletişim"]},
+                {word: "YENİDÜNYA", forbidden: ["Amerika", "Coğrafya", "Keşif", "Kita", "Ülke"]},
+                {word: "ZIRVE", forbidden: ["Tepe", "Doruk", "En üst", "Yükseklik", "Dağ"]}
+            ],
+            orta: [
+                {word: "DEMOKRASİ", forbidden: ["Oy", "Seçim", "Hükümet", "Yönetim", "Özgürlük"]},
+                {word: "CÜCELİK", forbidden: ["Hastalık", "Boy", "Kısa", "Cüce", "Fizik"]},
+                {word: "İRONİ", forbidden: ["Zıtlık", "Söz", "Alaycı", "Anlam", "Gülünç"]},
+                {word: "METAFOR", forbidden: ["Sözcük", "Benzetme", "Yazın", "Anlam", "Şiir"]},
+                {word: "NOSTALJİ", forbidden: ["Özlem", "Geçmiş", "Hissiyat", "Hüzün", "Anı"]},
+                {word: "SATİRİK", forbidden: ["Komik", "Mizah", "Alaycı", "Ağır", "Söz"]},
+                {word: "MOTİF", forbidden: ["Tema", "Desen", "Sanat", "Figür", "Müzik"]},
+                {word: "SİNEMA", forbidden: ["Film", "Sanat", "Sahne", "Müzik", "Ses"]},
+                {word: "ORMAN", forbidden: ["Ağaç", "Doğa", "Yeşil", "Oksijen", "Hayvan"]},
+                {word: "SERAMİK", forbidden: ["Porselen", "Seramik", "Çanak", "Tabak", "Çatı"]},
+                {word: "REALİZM", forbidden: ["Gerçek", "Sanat", "Resim", "Felsefe", "Davranış"]},
+                {word: "KAFTAN", forbidden: ["Giysi", "Elbise", "Çarşaf", "Kılık", "Uzun kıyafet"]},
+                {word: "SAKSOFONİ", forbidden: ["Müzik", "Enstrüman", "Ses", "Cazz", "Bakır"]},
+                {word: "UYUM", forbidden: ["Birlik", "Barış", "Mutluluk", "Takım", "Anlayış"]},
+                {word: "PEDALİ", forbidden: ["Bisiklet", "Ayak", "Makine", "Hızlandırma", "Hareket"]},
+                {word: "ORIJIN", forbidden: ["Kaynak", "Başlangıç", "Kökeni", "İlk", "Neresi"]},
+                {word: "MOD", forbidden: ["Moda", "Stil", "Trend", "Kültür", "Şekli"]},
+                {word: "PALİMPSEST", forbidden: ["Yazı", "Eski", "Silinmiş", "Parşömen", "Dönem"]},
+                {word: "HEDONİZM", forbidden: ["Zevk", "Felsefe", "Yaşam", "Tatmin", "Haz"]},
+                {word: "ENTROPİ", forbidden: ["Fizik", "Kaos", "Düzen", "Termodinamik", "Bozulma"]},
+                {word: "PSİKİYATRİ", forbidden: ["Mental", "Doktor", "Ruh", "Hastalık", "Tedavi"]},
+                {word: "KOSMOPOLİT", forbidden: ["Dünya", "Uluslararası", "İnsan", "Sınırsız", "Kültür"]},
+                {word: "FONEMİK", forbidden: ["Ses", "Dil", "Kelime", "Harf", "Anlam"]},
+                {word: "ANTROPOMORFIZM", forbidden: ["İnsan", "Özellik", "Hayvan", "Benzetme", "Ruh"]},
+                {word: "KOD", forbidden: ["İnsan", "Beden", "Yaşam", "Fizyoloji", "Biyoloji"]},
+                {word: "ONTOLOJİ", forbidden: ["Varlık", "Felsefe", "Teori", "İnsan", "Bilim"]},
+                {word: "MAKABİ", forbidden: ["Ölüm", "Sinister", "Dehşet", "Korkunç", "Estetik"]},
+                {word: "ABSTRAKT SANAT", forbidden: ["Resim", "Sanat", "Şekil", "Gerçeklik", "Modern"]},
+                {word: "PARABİOLOJİ", forbidden: ["Paranormal", "Ruh", "Bilim", "Gizemli", "Dış"]},
+                {word: "BARİYER", forbidden: ["Engel", "Duvar", "Ayrım", "Sınır", "Kimyasal"]},
+                {word: "ENKLİTİK", forbidden: ["Dilbilgisi", "Sözcük", "Ses", "Morfema", "Bağlama"]},
+                {word: "EPİSENTR", forbidden: ["Deprem", "Merkez", "Sarsıntı", "Yer", "Hasar"]},
+                {word: "FENOMENOLOJİ", forbidden: ["Felsefe", "İnsan", "İdrake", "Deneyim", "Bilim"]},
+                {word: "KATEGORİ", forbidden: ["Sınıf", "Grup", "Bölüm", "Tür", "Ayrım"]},
+                {word: "ÇERÇEVELEME", forbidden: ["Sınır", "Sanat", "Resim", "Görüş", "Alan"]},
+                {word: "FONETIK", forbidden: ["Ses", "Dil", "Telaffuz", "Harf", "Konuşma"]},
+                {word: "GENETİK", forbidden: ["Kalıtım", "DNA", "Gen", "Hastalık", "Biyoloji"]},
+                {word: "HOMOGRAF", forbidden: ["Yazı", "İkiz kelime", "Telaffuz", "Anlamı", "Dil"]},
+                {word: "KİNETİK", forbidden: ["Hareket", "Enerji", "Fizik", "Dinamik", "Hız"]},
+                {word: "LEKSİKON", forbidden: ["Sözlük", "Kelimeler", "Dil", "Anlam", "Sözcük"]},
+                {word: "MÜZİK TEORİSİ", forbidden: ["Melodi", "Armoni", "Ritim", "Not", "Ses"]},
+                {word: "NEOKLASİK", forbidden: ["Sanat", "Stil", "Klasik", "Modern", "İnsan"]},
+                {word: "ONTOLOJİST", forbidden: ["Varlık", "Felsefeci", "Teori", "İnsan", "Bilim"]},
+                {word: "FARMAKOLOJI", forbidden: ["İlaç", "Eczane", "Doktor", "Kimya", "Tedavi"]},
+                {word: "AROMATERAPİ", forbidden: ["Tedavi", "Koku", "Bitki", "Yaşam", "Sağlık"]},
+                {word: "APOMİKSİS", forbidden: ["Üretim", "Seks", "Çoğalma", "Biyoloji", "Hücre"]},
+                {word: "KUADRUPEDİ", forbidden: ["Dört", "Ayak", "Hayvan", "Hareket", "Bacak"]},
+                {word: "MAKROSKOPİK", forbidden: ["Büyük", "Görülür", "Göz", "Mikroskop", "Boyut"]},
+                {word: "POLİKROMİ", forbidden: ["Renkli", "Sanat", "Resim", "Renk", "Teknik"]},
+                {word: "KIRIŞ", forbidden: ["Işık", "Kırılma", "Cam", "Lens", "Fizik"]},
+                {word: "AUTONOMI", forbidden: ["Bağımsızlık", "Özerklik", "Kendi", "Yönetim", "Gücü"]},
+                {word: "BULIMIA", forbidden: ["Hastalık", "Yemek", "Kusmak", "Gıda", "Anoreksiya"]},
+                {word: "CINEMATİCA", forbidden: ["Hareket", "Film", "Sanat", "Görüntü", "Sinematoloji"]},
+                {word: "DIALEKTIK", forbidden: ["Mantık", "Çelişki", "Felsefe", "Tez", "Sintez"]},
+                {word: "ERGONOMI", forbidden: ["Tasarım", "Rahatlık", "İş", "Uygunluk", "Çalışma"]},
+                {word: "FIZYOLOJI", forbidden: ["Beden", "Organ", "Fonksiyon", "Beyin", "Vücut"]},
+                {word: "GASTRONOMİ", forbidden: ["Yemek", "Pişirme", "Aşçılık", "Mutfak", "Lezzet"]},
+                {word: "HEDONIST", forbidden: ["Zevk", "İstekli", "Yaşam", "Felsefe", "Hazlı"]},
+                {word: "İZOLASYON", forbidden: ["Ayırma", "Karantina", "Tecrit", "Uzaklaştırma", "Ayrı"]},
+                {word: "JALUZİ", forbidden: ["Pencere", "Perde", "Kumaş", "Işık", "Kapalı"]},
+                {word: "KATASTAL", forbidden: ["Harita", "Arsa", "Tapu", "Resmî", "Kayıt"]},
+                {word: "LITOTOMI", forbidden: ["Cerrahi", "Ağır", "Taş", "Operasyon", "Kesme"]},
+                {word: "MOTİVASYON", forbidden: ["Istek", "Çalışma", "Neden", "İtiş", "Dürtü"]},
+                {word: "NEFROLOJI", forbidden: ["Böbrek", "Doktor", "Tıp", "Hastalık", "Organ"]},
+                {word: "OBSTETRİK", forbidden: ["Doğum", "Hamile", "Tıp", "Doktor", "Çocuk"]},
+                {word: "PARANTEZ", forbidden: ["Yazı", "Sembol", "Açılı", "Kapalı", "Metin"]},
+                {word: "QUARANTINE", forbidden: ["Ayırma", "Karantina", "Hastalık", "İzolasyon", "Tecrit"]},
+                {word: "RETORİK", forbidden: ["Söz", "Hitabet", "Konuşma", "Sanat", "İkna"]},
+                {word: "SADİZM", forbidden: ["Acı", "Zulüm", "Eğlenme", "İşkence", "Eğlence"]},
+                {word: "TAKSIDERMI", forbidden: ["Hayvan", "Doldurma", "Koruma", "Sanat", "Müze"]},
+                {word: "URETLOJI", forbidden: ["Tıp", "Mesane", "Doktor", "Organ", "Hastalık"]},
+                {word: "VASKÜLİT", forbidden: ["Enflamasyon", "Damar", "Hastalık", "Tıp", "İltihap"]},
+                {word: "WATUSI", forbidden: ["Dans", "Ritim", "Müzik", "Hareketi", "Africano"]},
+                {word: "XANADU", forbidden: ["Cenneti", "Yüksek", "Hayal", "Saray", "İstinye"]},
+                {word: "YARGI", forbidden: ["Mahkeme", "Hukuk", "Karar", "Yargıç", "Adalet"]},
+                {word: "ZOONOZ", forbidden: ["Hastalık", "Hayvan", "Bulaş", "İnsan", "Enfeksiyon"]},
+                {word: "AVERŞİON", forbidden: ["Nefret", "Tiksinme", "Çekinme", "Hoşlanmama", "Tepki"]},
+                {word: "BİSEKSÜEL", forbidden: ["Cinsellik", "Çifte", "Aşk", "İlişki", "Tercihi"]},
+                {word: "CENTRİFUJ", forbidden: ["Makine", "Dönme", "Kuvvet", "Ayrıştırma", "Fizik"]},
+                {word: "DEFLORALİZE", forbidden: ["Bitkiler", "Çiçekler", "Yok", "Doğa", "Envai"]},
+                {word: "EKOMETRİ", forbidden: ["Ölçüm", "Doğa", "Çevre", "Bilim", "Sayım"]},
+                {word: "FETİŞ", forbidden: ["Obje", "Aşk", "İlişki", "Fizyoloji", "Psikiyatri"]},
+                {word: "GEOMETRİ", forbidden: ["Matematik", "Şekil", "Ölçüm", "Açı", "Alan"]},
+                {word: "HEMORAJI", forbidden: ["Kan", "Akış", "Hastalık", "Kaybı", "Doktor"]},
+                {word: "İNCİZYON", forbidden: ["Kesme", "Cerrahi", "Operasyon", "Bıçak", "Yara"]},
+                {word: "JAKOBİYEN", forbidden: ["Matematik", "Matris", "Determinant", "Fonksiyon", "Türev"]},
+                {word: "KATASTROF", forbidden: ["Felaket", "Hâdi", "Korkunç", "Dağılma", "Çöküş"]},
+                {word: "LAKTOJENİK", forbidden: ["Süt", "Sütle", "Hormonal", "Üretim", "Emzirme"]},
+                {word: "MEDULLER", forbidden: ["Beyin", "Organ", "Sinir", "Merkezî", "Kök"]},
+                {word: "NEOLOJI", forbidden: ["Yeni", "Kelime", "Dil", "Sözcük", "Ilaç"]},
+                {word: "OPALESCSE", forbidden: ["Parıltı", "Işık", "Renkler", "Cam", "Görünüş"]},
+                {word: "PALİNDROM", forbidden: ["Kelime", "Tersine", "Yazı", "Tersi", "Simetri"]},
+                {word: "QUADRICEPS", forbidden: ["Kas", "Bacak", "Anatomi", "Vücut", "Organ"]},
+                {word: "REFRAKCYON", forbidden: ["Işık", "Cam", "Kırılma", "Fizik", "Göz"]},
+                {word: "SAKROMENTİZM", forbidden: ["Din", "Kutsal", "Ritüel", "Dini", "İbadet"]},
+                {word: "TAVTOLOJİ", forbidden: ["Tekrar", "Söz", "Mantık", "Boş", "Anlamsız"]},
+                {word: "ULTRASONİK", forbidden: ["Ses", "Yüksek", "Frekans", "Tıp", "Fizik"]},
+                {word: "VİRTÜÖZ", forbidden: ["Yetenekli", "Sanat", "Doktor", "Ressam", "Müzisyen"]},
+                {word: "WUNDERKINsüre", forbidden: ["Çocuk", "Yetenekli", "Dâhia", "Mucize", "Budala"]},
+                {word: "XANTIK", forbidden: ["Sarı", "Renk", "Kimya", "Bitkiler", "Pigment"]},
+                {word: "YORKSHIRE", forbidden: ["Bölge", "İngiltere", "Ülke", "Coğrafya", "Mekan"]},
+                {word: "ZOOPHILIA", forbidden: ["Hayvan", "Aşk", "Cinsellik", "Sapkın", "Çekinme"]}
+            ],
+            zor: [
+                {word: "EPİSTEMOLOJİ", forbidden: ["Bilgi", "Bilim", "Felsefe", "İnsan", "Teori"]},
+                {word: "ONTOLOJI", forbidden: ["Varlık", "Felsefe", "Teori", "İnsan", "Bilim"]},
+                {word: "HERMENEUTİK", forbidden: ["Yorum", "Anlayış", "Metin", "Anlam", "Yorum"]},
+                {word: "FENOMENOLOJİ", forbidden: ["İnsan", "Bilinç", "Deneyim", "Teori", "Yönetim"]},
+                {word: "DİALEKTİK", forbidden: ["Tez", "Antitez", "Sentez", "Çatışma", "Felsefe"]},
+                {word: "EKLEKTİSİZM", forbidden: ["Seçme", "Harmanlama", "Felsefe", "Stil", "Sanat"]},
+                {word: "PANTEİZM", forbidden: ["Tanrı", "Doğa", "Eğrilik", "Felsefe", "İnsan"]},
+                {word: "APHORİZM", forbidden: ["Söz", "Kısa", "Cümle", "Düşün", "İfade"]},
+                {word: "METONYMY", forbidden: ["Söz", "Şekil", "Benzetme", "İfade", "Dil"]},
+                {word: "SİNEKDOŞE", forbidden: ["Parça", "Bütün", "Benzetme", "Söz", "Dil"]},
+                {word: "ANTONOMASYA", forbidden: ["Sözcük", "İnsan", "Taklidi", "Konuş", "Dil"]},
+                {word: "OKSİMORON", forbidden: ["Çelişki", "Söz", "Benzetme", "Anlam", "Sanat"]},
+                {word: "ZEUGMATİK", forbidden: ["Kelime", "Kullanım", "Hata", "Yanlış", "Dil"]},
+                {word: "PERİFRAZE", forbidden: ["Açıklama", "Söz", "Yanlış", "Dil", "İfade"]},
+                {word: "SİNESTEZİ", forbidden: ["Duyu", "Karışma", "Algı", "Sinir", "Beyin"]},
+                {word: "SOLİPSİZM", forbidden: ["Bilinç", "Kendisi", "Varlık", "Gerçek", "Felsefe"]},
+                {word: "RELATİVİZM", forbidden: ["Bağıl", "Mutlak", "Teori", "Görüş", "Felsefe"]},
+                {word: "NİHİLİZM", forbidden: ["Anlamsız", "Değer", "Anlam", "Anlam", "Varolma"]},
+                {word: "ABSURDİZM", forbidden: ["Anlamsız", "Camus", "Felsefe", "Anlam", "Mantık"]},
+                {word: "EXİSTENSİALİZM", forbidden: ["Var olma", "Felsefe", "Sartre", "İnsan", "Seçim"]},
+                {word: "KONTENJANS", forbidden: ["Tesadüf", "Olasılık", "Mümkün", "Felsefe", "Var"]},
+                {word: "TRANSENDEN", forbidden: ["Aştırma", "Felsefe", "Sınır", "Öte", "Kant"]},
+                {word: "KATAKRESIS", forbidden: ["Sözcük", "Yanlış", "Hata", "Dil", "Benzetme"]},
+                {word: "ANODİN", forbidden: ["Ağrı", "Rahatlama", "İlaç", "Teskin", "Çare"]},
+                {word: "ANODYNE", forbidden: ["Ağrısız", "Rahatlık", "Teskin", "Rahatlatıcı", "Çare"]},
+                {word: "ASİMPTOTİK", forbidden: ["Eğri", "Limit", "Matematik", "Yakın", "Sınır"]},
+                {word: "KATEGORİCAL", forbidden: ["Ahlak", "Kant", "Görev", "Evrensel", "Felsefe"]},
+                {word: "NOMEN", forbidden: ["Şey kendisi", "Kant", "Felsefe", "Bilinç", "Var"]},
+                {word: "QUALIA", forbidden: ["Deneyim", "Bilinç", "Algı", "Ruh", "Felsefe"]},
+                {word: "NOESIS", forbidden: ["Düşün", "Bilinç", "Algı", "Felsefe", "Ruh"]},
+                {word: "METAFİZİK", forbidden: ["Gerçeklik", "Var", "Felsefe", "Soyut", "Dışarı"]},
+                {word: "EPISTEMIK", forbidden: ["Bilgi", "Bilinç", "Anlayış", "Felsefe", "Kesinlik"]},
+                {word: "LOGOSENTRIZM", forbidden: ["Söz", "Merkez", "Felsefe", "Derrida", "Yazı"]},
+                {word: "TRAZENDENTAL", forbidden: ["Aştırma", "Kant", "Felsefe", "Çıktı", "Dış"]},
+                {word: "APORIAS", forbidden: ["Paradoks", "Çıkmazı", "Felsefe", "Yol", "Çelişki"]},
+                {word: "STRUKTÜRALİZM", forbidden: ["Sistem", "Felsefe", "Bağ", "Form", "İnsan"]},
+                {word: "POSTSTRÜKTÜRALİZM", forbidden: ["Sonra", "Yapı", "Felsefe", "Derrida", "Bozma"]},
+                {word: "SİMU LAKRA", forbidden: ["Sahte", "Gerçek", "Baudrillard", "İmge", "İlüzyon"]},
+                {word: "PERFORMATIF", forbidden: ["Söz", "Eylem", "Hareket", "Yapma", "Gerçekleştirme"]},
+                {word: "DİFERANS", forbidden: ["Fark", "Erteleme", "Derrida", "Ses", "Yazı"]},
+                {word: "APORETİK", forbidden: ["Çıkmazı", "Felsefe", "Yol", "Paradoks", "Çelişki"]},
+                {word: "PALİMPSESTİK", forbidden: ["Çok katman", "Yazı", "Tarih", "Silme", "Üstü"]},
+                {word: "HORIZONSAL", forbidden: ["Yatay", "Düzey", "Görüş", "Çizgi", "Ufuk"]},
+                {word: "İNTRİKATLI", forbidden: ["Karmaşık", "Şekli", "Dolanmış", "Entrik", "Zor"]},
+                {word: "KABALİSTİK", forbidden: ["Gizli", "Yahudi", "Felsefe", "Geleneksel", "Anlamı"]},
+                {word: "TAOİZM", forbidden: ["Yol", "Çince", "Felsefe", "Doğa", "Uyum"]},
+                {word: "OKKÜLTİZM", forbidden: ["Gizli", "Mistik", "Okült", "Esoterik", "Sihir"]},
+                {word: "ESKATOLOJİ", forbidden: ["Son", "Çağ", "Felsefe", "Kıyamet", "Dinsel"]},
+                {word: "TEORAPİLENTİK", forbidden: ["Tedavi", "İyileşme", "Çare", "Bakım", "Iyilik"]},
+                {word: "PATRİARKAL", forbidden: ["Baba", "Yönetim", "Erk", "Erkek", "Aile"]},
+                {word: "BİURETİK", forbidden: ["Çift", "Yönetim", "Güç", "Hakimiyet", "İkilik"]},
+                {word: "POLİVALANT", forbidden: ["Çok", "Değer", "Anlamı", "Kullanım", "Forma"]},
+                {word: "MONOLİTİK", forbidden: ["Tek", "Taş", "Büyük", "Yapı", "Değişmez"]},
+                {word: "HOLİSTİK", forbidden: ["Bütün", "Sistem", "Parçalar", "Tümüyle", "Genel"]},
+                {word: "FRAGMENTARİ", forbidden: ["Parça", "Kırık", "Bölümler", "Eksik", "Parçalı"]},
+                {word: "PLURALISTIK", forbidden: ["Çok", "Çeşitlilik", "Felsefe", "Görüş", "Sistem"]},
+                {word: "MONİZM", forbidden: ["Tek", "Tamsayı", "Felsefe", "Birlik", "Evren"]},
+                {word: "DUALİZM", forbidden: ["İkili", "Zıt", "Felsefe", "Ruh-Beden", "Birbirlerine"]},
+                {word: "TRİADİZM", forbidden: ["Üç", "Sayı", "Kutsal", "Tanrılık", "Form"]},
+                {word: "TELEOLOJİ", forbidden: ["Amaç", "Son", "Felsefe", "Amacı", "Nihai"]},
+                {word: "ARCHEYPE", forbidden: ["Örnek", "Original", "Form", "Model", "Prototip"]},
+                {word: "SİMBOLİZM", forbidden: ["İşaret", "Anlam", "Sanat", "Sembol", "İfade"]},
+                {word: "SYNESTHESIA", forbidden: ["Duyular", "Karışma", "Algı", "Sinir", "Kombinasyon"]},
+                {word: "ANAMORPHOSE", forbidden: ["Çarpık", "Görünüş", "Resim", "Perspektif", "Dış"]}
+            ]
+        };
+
+        // STATE
+        let game = {
+            teams: [],
+            difficulty: 'orta',
+            timeLimit: 120,
+            passesPerTeam: 3,
+            scores: {},
+            currentTeamIdx: 0,
+            wordIdx: 0,
+            timeLeft: 120,
+            passesLeft: 3,
+            timerInterval: null,
+            isActive: false,
+            isPaused: false,
+            usedWords: [],
+            totalCorrect: 0,
+            totalPassed: 0,
+            soundEnabled: true,
+            startTime: 0,
+            elapsedTime: 0
+        };
+
+        // SETUP: Zorluk seçimi
+        document.querySelectorAll('[data-difficulty]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('[data-difficulty]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                game.difficulty = this.dataset.difficulty;
+            });
+        });
+
+        // SETUP: Süre seçimi
+        document.querySelectorAll('[data-time]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('[data-time]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                game.timeLimit = parseInt(this.dataset.time);
+            });
+        });
+
+        // İlk seçimleri belirle
+        document.querySelector('[data-difficulty="orta"]').click();
+        document.querySelector('[data-time="120"]').click();
+
+        // Takım ekleme
+        function addTeam() {
+            const input = document.getElementById('teamInput');
+            const name = input.value.trim();
+            const err = document.getElementById('teamError');
+            err.textContent = '';
+
+            if (!name) {
+                err.textContent = 'Takım adı girin';
+                return;
+            }
+            if (game.teams.includes(name)) {
+                err.textContent = 'Zaten ekli';
+                return;
+            }
+
+            game.teams.push(name);
+            input.value = '';
+            renderTeams();
+        }
+
+        function renderTeams() {
+            document.getElementById('teamsList').innerHTML = game.teams.map(t => 
+                `<div class="team-tag">${t} <button type="button" onclick="removeTeam('${t}')">×</button></div>`
+            ).join('');
+        }
+
+        function removeTeam(name) {
+            game.teams = game.teams.filter(t => t !== name);
+            renderTeams();
+        }
+
+        document.getElementById('teamInput').addEventListener('keypress', e => {
+            if (e.key === 'Enter') { e.preventDefault(); addTeam(); }
+        });
+
+        // Oyunu başlat
+        function startGame(e) {
+            e.preventDefault();
+
+            const err = document.getElementById('teamError');
+            err.textContent = '';
+
+            if (game.teams.length < 2) {
+                err.textContent = 'En az 2 takım gerekli';
+                return;
+            }
+
+            game.scores = {};
+            game.teams.forEach(t => game.scores[t] = 0);
+            game.currentTeamIdx = 0;
+            game.wordIdx = 0;
+            game.timeLeft = game.timeLimit;
+            game.passesLeft = game.passesPerTeam;
+            game.isActive = true;
+            game.isPaused = false;
+            game.usedWords = [];
+            game.totalCorrect = 0;
+            game.totalPassed = 0;
+            game.startTime = Date.now();
+
+            document.getElementById('statsBtn').style.display = 'block';
+
+            switchScreen('gameScreen');
+            showWord();
+            startTimer();
+        }
+
+        // Kelime göster
+        function showWord() {
+            const wordList = words[game.difficulty];
+            let word;
+
+            do {
+                word = wordList[Math.floor(Math.random() * wordList.length)];
+            } while (game.usedWords.includes(word.word));
+
+            game.usedWords.push(word.word);
+
+            document.getElementById('wordDisplay').textContent = word.word;
+            document.getElementById('forbiddenList').innerHTML = word.forbidden
+                .map(w => `<div class="forbidden-item">${w}</div>`).join('');
+
+            const badge = document.getElementById('diffBadge');
+            if (game.difficulty === 'kolay') {
+                badge.textContent = '🟢 KOLAY';
+            } else if (game.difficulty === 'orta') {
+                badge.textContent = '🟡 ORTA';
+            } else {
+                badge.textContent = '🔴 ZOR';
+            }
+
+            updateUI();
+        }
+
+        // UI güncelle
+        function updateUI() {
+            const team = game.teams[game.currentTeamIdx];
+            document.getElementById('currentTeam').textContent = team;
+            document.getElementById('currentScore').textContent = game.scores[team];
+            document.getElementById('wordCount').textContent = game.usedWords.length;
+            document.getElementById('roundNum').textContent = `${game.wordIdx + 1}/${Math.ceil(game.timeLimit / 2)}`;
+            
+            const passBtn = document.getElementById('passBtn');
+            passBtn.textContent = `⏭️ PAS (${game.passesLeft})`;
+            passBtn.disabled = game.passesLeft <= 0;
+
+            document.getElementById('passInfo').textContent = `Takım: ${team} | Puan: ${game.scores[team]} | Kalan Pas: ${game.passesLeft}`;
+
+            document.getElementById('scoresGrid').innerHTML = game.teams.map(t => `
+                <div class="score-item ${t === team ? 'active' : ''}">
+                    <div class="score-team">${t}</div>
+                    <div class="score-value">${game.scores[t]}</div>
+                </div>
+            `).join('');
+        }
+
+        // Doğru
+        function markCorrect() {
+            if (!game.isActive || game.isPaused) return;
+            game.scores[game.teams[game.currentTeamIdx]]++;
+            game.totalCorrect++;
+            playSound('correct');
+            updateUI();
+            showWord();
+        }
+
+        // Pas
+        function markPass() {
+            if (!game.isActive || game.isPaused || game.passesLeft <= 0) return;
+            game.passesLeft--;
+            game.totalPassed++;
+            playSound('pass');
+            updateUI();
+            showWord();
+        }
+
+        // Geçş (sonraki takım)
+        function markSkip() {
+            if (!game.isActive || game.isPaused) return;
+            game.currentTeamIdx = (game.currentTeamIdx + 1) % game.teams.length;
+            game.passesLeft = game.passesPerTeam;
+            game.wordIdx++;
+            playSound('skip');
+
+            if (game.currentTeamIdx === 0) {
+                if (game.usedWords.length >= 50) {
+                    endGame();
+                    return;
+                }
+            }
+
+            updateUI();
+            showWord();
+        }
+
+        // Timer
+        function startTimer() {
+            if (game.timerInterval) clearInterval(game.timerInterval);
+            game.timerInterval = setInterval(() => {
+                if (!game.isPaused) {
+                    game.timeLeft--;
+                    game.elapsedTime = Math.floor((Date.now() - game.startTime) / 1000);
+                }
+                
+                const timerDisplay = document.getElementById('timer');
+                timerDisplay.textContent = game.timeLeft;
+
+                if (game.timeLeft <= 10) {
+                    timerDisplay.classList.add('warning');
+                }
+
+                if (game.timeLeft <= 0) {
+                    clearInterval(game.timerInterval);
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        // Duraklat/Devam Et
+        function togglePause() {
+            if (!game.isActive) return;
+
+            game.isPaused = !game.isPaused;
+
+            if (game.isPaused) {
+                switchScreen('pauseScreen');
+            } else {
+                switchScreen('gameScreen');
+            }
+        }
+
+        // Oyunu bitir onayı
+        function confirmEndGame() {
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+        }
+
+        function endGameConfirmed() {
+            clearInterval(game.timerInterval);
+            game.isActive = false;
+            closeConfirmModal();
+            if (game.isPaused) {
+                switchScreen('gameScreen');
+                game.isPaused = false;
+            }
+            endGame();
+        }
+
+        // Oyun bitti
+        function endGame() {
+            clearInterval(game.timerInterval);
+            game.isActive = false;
+
+            const scores = game.scores;
+            const max = Math.max(...Object.values(scores));
+            const winner = Object.keys(scores).find(t => scores[t] === max);
+
+            document.getElementById('winnerBox').innerHTML = `
+                <div class="winner-box">
+                    <h2>🏆 ${winner}</h2>
+                    <p>${max} puan!</p>
+                </div>
+            `;
+
+            document.getElementById('finalScores').innerHTML = Object.keys(scores)
+                .sort((a, b) => scores[b] - scores[a])
+                .map(t => `
+                    <div class="final-card ${scores[t] === max ? 'winner' : ''}">
+                        <div class="final-team">${t}</div>
+                        <div class="final-score">${scores[t]}</div>
+                    </div>
+                `).join('');
+
+            const totalWords = game.usedWords.length;
+            const successRate = totalWords > 0 ? Math.round((game.totalCorrect / totalWords) * 100) : 0;
+
+            document.getElementById('totalWords').textContent = totalWords;
+            document.getElementById('correctWords').textContent = game.totalCorrect;
+            document.getElementById('passedWords').textContent = game.totalPassed;
+            document.getElementById('successRate').textContent = successRate + '%';
+
+            switchScreen('resultsScreen');
+        }
+
+        // İstatistikleri göster
+        function showStats() {
+            const teamStats = game.teams.map(t => {
+                const correct = Object.values(game.scores).reduce((a, b) => a + b, 0);
+                return `<div class="stat-row"><span class="stat-label">${t}</span><span class="stat-value">${game.scores[t]} puan</span></div>`;
+            }).join('');
+
+            document.getElementById('teamStats').innerHTML = teamStats;
+            document.getElementById('statsTotal').textContent = game.usedWords.length;
+            document.getElementById('statsTime').textContent = game.elapsedTime + 's';
+            document.getElementById('statsDiff').textContent = game.difficulty.toUpperCase();
+
+            document.getElementById('statsModal').classList.add('active');
+        }
+
+        function closeStats() {
+            document.getElementById('statsModal').classList.remove('active');
+        }
+
+        // Ses kontrol
+        function toggleSound() {
+            game.soundEnabled = !game.soundEnabled;
+            const btn = document.getElementById('soundBtn');
+            const minBtn = document.getElementById('soundMinBtn');
+            if (game.soundEnabled) {
+                btn.textContent = '🔊';
+                if (minBtn) minBtn.textContent = '🔊 SES';
+            } else {
+                btn.textContent = '🔇';
+                if (minBtn) minBtn.textContent = '🔇 SES';
+            }
+        }
+
+        // Ses efektleri
+        function playSound(type) {
+            if (!game.soundEnabled) return;
+
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+
+            if (type === 'correct') {
+                oscillator.frequency.value = 800;
+            } else if (type === 'pass') {
+                oscillator.frequency.value = 600;
+            } else if (type === 'skip') {
+                oscillator.frequency.value = 400;
+            }
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+
+        // Ekran değiştir
+        function switchScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        // Yeniden başla
+        function backToSetup() {
+            clearInterval(game.timerInterval);
+            game.teams = [];
+            renderTeams();
+            document.getElementById('statsBtn').style.display = 'none';
+            switchScreen('setupScreen');
+        }
+
+        // Klavye tuşları
+        document.addEventListener('keydown', (e) => {
+            if (!game.isActive || game.isPaused) return;
+            if (e.code === 'Space') { e.preventDefault(); markCorrect(); }
+            if (e.code === 'ArrowRight') { e.preventDefault(); markSkip(); }
+            if (e.code === 'ArrowLeft') { e.preventDefault(); markPass(); }
+        });
+    </script>
+</body>
+</html>
